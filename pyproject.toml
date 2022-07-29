@@ -1,0 +1,6 @@
+[tool.black]
+skip-string-normalization = 1
+
+# ignoring venv folder
+# ignoring test_* files because of special-readable way of params defenition
+exclude = '/venv/|test_'
