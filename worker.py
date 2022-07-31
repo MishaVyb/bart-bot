@@ -4,15 +4,18 @@ developing:
 [ ] удалить одинаковые фотки не по айди, а реально сравнив фотки,
     добавить эту проверку в обработчик при каждом запросе к all
 [ ] sheldue message :(
+
+
+[Х] multyply reply for uploaded photo
+
+syntaxis:
 [ ] переделать все на self.message.reply_photo
-
-[ ] multyply reply for uploaded photo
-
 
 """
 
 
 from __future__ import annotations
+from curses import beep
 import functools
 
 import json
@@ -25,7 +28,7 @@ from time import sleep
 
 MSC_TZ = timezone(offset=timedelta(hours=3), name='MSC')
 
-from typing import Callable, TypeVar
+from typing import Callable, ClassVar, TypeVar
 
 from telegram import (
     Bot,
@@ -46,7 +49,7 @@ from telegram.ext import (
     Updater,
 )
 
-
+import yadisk
 import settings
 from settings import logger
 
@@ -252,46 +255,117 @@ class Start(UpdateMessageHandler):
         )
 
 
+class ConstraintError(Exception):
+    pass
+
+
 class JsonFileOperator:
-    file_path = 'messages_data'
     bot: Bot | None = None
+    yadisk: YaDisk | None = None
+
+    _remote_file_folder = '/bart-bot-2.0/'
+    _remote_file_name = 'bart_bot_yandex_disk_storage_messages_data'
+    remote_file_path = _remote_file_folder + _remote_file_name
+
+    _local_file_folder = ''
+    _local_file_name = 'local_messages_data'
+    local_file_path = _local_file_folder + _local_file_name
 
     @classmethod
     def get_all(cls) -> list[Message]:
-        if not cls.bot:
-            raise RuntimeError('bot field should be definded')
+        if not cls.bot or not cls.yadisk:
+            raise RuntimeError('bot and yadisk fields should be definded')
 
-        with open(cls.file_path, 'r') as file:
+        try:
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
+        except FileNotFoundError:
+            # create file if it does not exixt
+            open(cls.local_file_path, 'w+')
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
+        except yadisk.exceptions.PathNotFoundError:
+            logger.warning(
+                'Remote data not phoun. '
+                'Check deleted files at remoute server, data cold be there. '
+                'Anyway, created new data file with no data and contunue processing. '
+            )
+            with open(cls.local_file_path, "w+") as f:
+                f.write('')
+                cls.yadisk.upload(f, cls.remote_file_path)
+
+        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
+        with open(cls.local_file_path, 'r') as file:
             data_str = file.read()
             if not data_str:
-                logger.warning(f'Epty file "{cls.file_path}"')
+                logger.warning(f'No data')
                 return []
 
-            data_json: list = json.loads(data_str)
+            try:
+                data_json: list = json.loads(data_str)
+            except json.decoder.JSONDecodeError as e:
+                raise ValueError(f'Unexpected json file value: {e}')
+
             if not isinstance(data_json, list):
-                raise ValueError(f'Unexpected json file "{cls.file_path}" value')
+                raise ValueError(f'Unexpected json file value: {type(data_json)}')
             messages: list[Message] = [
                 is_not_none(Message.de_json(single_message_json, bot=cls.bot))
                 for single_message_json in data_json
             ]
 
+        # удалить с локального диска
+        # os.remove(cls.local_file_path)
+
         # unique constraint cheker
-        if settings.DEBUG:
-            photos = [next(reversed(m.photo)) for m in messages]
-            photos_set: set[PhotoSize] = set(photos)
-            if len(photos) != len(photos_set):
-                logger.warning(
-                        f'Unique constraint failed.'
-                    )
-
-
+        # if settings.DEBUG:
+        photos = [next(reversed(m.photo)) for m in messages]
+        photos_set: set[PhotoSize] = set(photos)
+        if len(photos) != len(photos_set):
+            logger.warning(f'Unique constraint failed.')
+            return cls.remove_not_uniq(messages)
 
         return messages
 
     @classmethod
-    def append(cls, message: Message):
-        with open(cls.file_path, 'r+') as file:
+    def remove_not_uniq(cls, messsages: list[Message]) -> list[Message]:
+        logger.info('Prccessing removing repeted photos.')
+        for i, msg in enumerate(messsages):
+            # repeated_index = messsages.index(msg, i+1)
+            filtered = filter(
+                lambda m: next(reversed(m.photo)) == next(reversed(msg.photo)),
+                messsages,
+            )
+            next(filtered)  # skip first el
+            for repeated_messages in filtered:
+                messsages.remove(repeated_messages)
+                logger.info(f'Repeated photo #{i} removed.')
 
+        cls.rewrite(messsages)
+        return messsages
+
+    @classmethod
+    def append(cls, message: Message):
+        if not cls.bot or not cls.yadisk:
+            raise RuntimeError('bot and yadisk fields should be definded')
+
+        # unique constraint cheker
+        if list(
+            filter(
+                lambda m: next(reversed(m.photo)) == next(reversed(message.photo)),
+                cls.get_all(),
+            )
+        ):
+            raise ConstraintError('Invalid photo to append: unique constraint faild')
+            return
+
+        try:
+            # загрузить файл на локальный диск
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
+        except FileNotFoundError:
+            # create file if it does not exixt
+            open(cls.local_file_path, 'w+')
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
+
+        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
+        with open(cls.local_file_path, 'r+') as file:
             # DELETE LAST LINE
             # Move the pointer (similar to a cursor in a text editor) to the end of the file
             file.seek(0, os.SEEK_END)
@@ -324,18 +398,62 @@ class JsonFileOperator:
             file.write(message.to_json())
             file.write('\n]')  # end of list
 
+        # загрузить на яндекс диск новый файл
+        with open(cls.local_file_path, "rb") as f:
+            try:
+                cls.yadisk.upload(f, cls.remote_file_path)
+            except yadisk.exceptions.PathExistsError:
+                # удалить с яндекс диска
+                logger.warning('Start replacing remote storage file: delete it first.')
+                cls.yadisk.remove(cls.remote_file_path, permanently=False)
+                cls.yadisk.upload(f, cls.remote_file_path)
+                logger.info('Remote storage file replaced succesfully')
+
+        # удалить с локального диска
+        # os.remove(cls.local_file_path)
+        logger.info('Append photo to remote storage seccessfully')
+
     @classmethod
     def rewrite(cls, messages: list[Message]):
-        with open(cls.file_path, 'w') as file:
-            data: list[str] = []
-            for msg in messages:
-                j = msg.to_json()
-                data.append(j)
-            str_data = ',\n'.join(data)
-            file.write('[\n' + str_data + '\n]')
+        if not cls.bot or not cls.yadisk:
+            raise RuntimeError('bot and yadisk fields should be definded')
 
+        try:
+            # загрузить файл на локальный диск
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
+        except FileNotFoundError:
+            # create file if it does not exixt
+            open(cls.local_file_path, 'w+')
+            cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
 
+        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
+        with open(cls.local_file_path, 'w') as file:
+            if not messages:
+                # epty messages list for del all porpuse
+                # file becomes epty in that way
+                file.write('')
+            else:
+                data: list[str] = []
+                for msg in messages:
+                    j = msg.to_json()
+                    data.append(j)
+                str_data = ',\n'.join(data)
+                file.write('[\n' + str_data + '\n]')
 
+        # загрузить на яндекс диск новый файл
+        with open(cls.local_file_path, "rb") as f:
+            try:
+                cls.yadisk.upload(f, cls.remote_file_path)
+            except yadisk.exceptions.PathExistsError:
+                # удалить с яндекс диска
+                logger.warning('Start replacing remote storage file: delete it first.')
+                cls.yadisk.remove(cls.remote_file_path, permanently=False)
+                cls.yadisk.upload(f, cls.remote_file_path)
+                logger.info('Remote storage file replaced succesfully')
+
+        # удалить с локального диска
+        # os.remove(cls.local_file_path)
+        logger.info('Append photo to remote storage seccessfully')
 
 
 class GetAllPhotos(UpdateMessageHandler):
@@ -367,7 +485,11 @@ class GetAllPhotos(UpdateMessageHandler):
                 self.chat.id, [InputMediaPhoto(media=id) for id in photos[start:end]]
             )
             logger.info(f'Send media group with {end-start} photos successfully')
-            self.send_message(text=f'фотки c {start} по {end} из {len(photos)}')
+
+            # +1 becaues human verbose count representation
+            self.send_message(
+                text=f'фотки c {start + 1} по {end + 1} из {len(photos) + 1}'
+            )
 
         # отправим остаток
         start = end
@@ -397,8 +519,10 @@ class GetPhoto(UpdateMessageHandler):
     def send_photo(self, photo_id):
         self.context.bot.send_photo(self.chat.id, photo_id)
 
+
 class VerboseErrorMessage(UpdateMessageHandler):
     reply = 'кажется я сломался :( спроси у Миши, он починет'
+
 
 class DeletePhoto(UpdateMessageHandler):
     reply_no_photo_selected = 'выбери, какой я тебе не мрррравлюсь'
@@ -431,6 +555,15 @@ class DeletePhoto(UpdateMessageHandler):
         self.send_message(text=self.reply_succes)
 
 
+class DeleteAllPhotos(UpdateMessageHandler):
+    reply = 'меня больше нет...'
+
+    def __call__(self):
+        JsonFileOperator.rewrite([])
+        logger.info('Delete all photos succesfully')
+        self.send_message()
+
+
 class FeedMeSheldue(UpdateMessageHandler):
     reply = f'я очень голодный, сейчас нашкодю!! покорми меня'
 
@@ -443,49 +576,104 @@ class GetPhotoAfterFeeding(GetPhoto):
 
 
 class PutPhoto(UpdateMessageHandler):
-    reply = f"спасибо, очень вкусно, мрррр"
+    replys = [
+        'мрррр',
+        'oх какой я',
+        'погладь животик',
+        'погладь за ушком',
+        'мя',
+        'вот это я лапочка',
+        'ну просто ангел',
+        'а вот он я',
+    ]
+    reply_repeated_photo = 'ну не повторяйся мя'
+    prev_media_group_id: ClassVar[int | None] = None
 
     def __call__(self):
-        JsonFileOperator.append(message=self.message)
-        logger.info(f'Append photo to {JsonFileOperator.file_path} seccessfully. ')
-        self.send_message()
+        try:
+            JsonFileOperator.append(message=self.message)
+        except ConstraintError:
+            logger.info('Ignored repeated photo')
+            self.send_message(text=self.reply_repeated_photo)
+            return
+
+        prev = self.prev_media_group_id
+        current = self.message.media_group_id
+        if prev and prev == current:
+            return
+        PutPhoto.prev_media_group_id = current
+        self.send_message(text=random.choice(self.replys))
 
 
-class AnyMessage(UpdateMessageHandler):
-    reply = "я кушал уже {count} раз{ending}, но этого не достаточно, хочу еще"
+class CountMessage(UpdateMessageHandler):
+    replys = [
+        'я ангелочек уже {count} раз{ending}',
+        'но этого не достаточно, покажи еще',
+    ]
+    pause_duration = 0.5
+    reply_no_photos = 'меня нету..'
 
-    def reply_format(self):
-        return self.reply.format(count=len(JsonFileOperator.get_all()), ending='')
+    def reply_format(self) -> list[str]:
+        count = len(JsonFileOperator.get_all())
+        if count:
+            return [self.replys[0].format(count=count, ending=''), self.replys[1]]
+        else:
+            return [self.reply_no_photos]
 
     def __call__(self):
-        # count = MessageHistory.objects.get_all().count()
-        # ending = ''
-        # self.reply = self.reply.format(count=count, ending=ending)
-        self.send_message()
+        for msg in self.reply_format():
+            self.send_message(text=msg)
+            sleep(self.pause_duration)
 
 
 class CatMessage(UpdateMessageHandler):
-    reply = "🐈‍⬛"
+    replys = [
+        '🐈‍⬛',
+        'мяяяяяя',
+        'мя мя мя',
+        'меееааау',
+        'мрррр',
+        'мр',
+        'мр',
+        'мммм',
+        '...',
+        'царап царап',
+        'кусь кусь',
+        'а где еда?!',
+    ]
 
     def __call__(self):
-        self.send_message()
+        self.send_message(text=random.choice(self.replys))
+
+
+from yadisk import YaDisk
 
 
 def main():
     logger.info('main method is precessing')
+    if not all([settings.BOT_TOKEN, settings.ADMIN_CHAT_ID, settings.YADISK_TOKEN]):
+        raise RuntimeError('Invalid environment variables')
 
     bot = Bot(token=settings.BOT_TOKEN)
     JsonFileOperator.bot = bot
+    JsonFileOperator.yadisk = YaDisk(token=settings.YADISK_TOKEN)
 
     updater = Updater(token=settings.BOT_TOKEN)
     updater.dispatcher.add_handler(CommandHandler("start", Start.as_handler))
     # updater.dispatcher.add_handler(CommandHandler("info", SendInfo.as_handler))
-    updater.dispatcher.add_handler(CommandHandler("kiskis", GetPhoto.as_handler))
+    # updater.dispatcher.add_handler(CommandHandler("kiskis", GetPhoto.as_handler))
     updater.dispatcher.add_handler(CommandHandler("show", GetAllPhotos.as_handler))
+    updater.dispatcher.add_handler(CommandHandler("count", CountMessage.as_handler))
     updater.dispatcher.add_handler(MessageHandler(Filters.photo, PutPhoto.as_handler))
     updater.dispatcher.add_handler(
         MessageHandler(
             Filters.regex(r'|'.join(Start.buttons)), GetPhotoAfterFeeding.as_handler
+        )
+    )
+    updater.dispatcher.add_handler(
+        MessageHandler(
+            Filters.regex(r'del all|Del all'),
+            DeleteAllPhotos.as_handler,
         )
     )
     updater.dispatcher.add_handler(
@@ -495,7 +683,7 @@ def main():
         )
     )
 
-    updater.dispatcher.add_handler(MessageHandler(Filters.text, AnyMessage.as_handler))
+    updater.dispatcher.add_handler(MessageHandler(Filters.text, CatMessage.as_handler))
 
     updater.start_polling()
     updater.idle()

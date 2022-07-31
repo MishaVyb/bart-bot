@@ -376,3 +376,4 @@ Untitled*
 
 # ------- data base -------- #
 *.sqlite3
+local_messages_data
