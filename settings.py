@@ -18,6 +18,7 @@ class EnvFile(BaseSettings):
     class Config:
         env_file = ".env"
 
+
 try:
     env = EnvFile()
 except error_wrappers.ValidationError as error:
@@ -38,13 +39,20 @@ handlers: list[logging.Handler] = [
     logging.StreamHandler(),
 ]
 if BOT_TOKEN is not None and ADMIN_CHAT_ID is not None:
-    handlers.append(TelegramMessageHandler(BOT_TOKEN, ADMIN_CHAT_ID, logging.DEBUG))
+    handlers.append(TelegramMessageHandler(BOT_TOKEN, ADMIN_CHAT_ID, logging.ERROR))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 for handler in handlers:
     handler.setFormatter(
-        logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.Formatter(
+            '%(filename)s: '
+            '%(levelname)s: '
+            '%(funcName)s(): '
+            '%(lineno)d:\t'
+            '%(message)s'
+        )
     )
     logger.addHandler(handler)
