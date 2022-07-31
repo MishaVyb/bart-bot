@@ -211,7 +211,6 @@ class Start(UpdateMessageHandler):
 
         for time in self.sheldue:
             self.context.job_queue.run_daily(
-                # functools.partial(FeedMeSheldue.as_callback, update=self.update),
                 FeedMeSheldue.as_callback,
                 time=time,
                 name=FeedMeSheldue.__name__,
@@ -233,17 +232,20 @@ class Start(UpdateMessageHandler):
                 )
 
             now = datetime.now()
-            self.context.job_queue.run_daily(
-                self.callback,
-                time=datetime(
-                    year=now.year,
-                    month=now.month,
-                    day=now.day,
-                    hour=now.hour,
-                    minute=now.minute,
-                    second=now.second + 5,
-                ),
-            )
+            try:
+                self.context.job_queue.run_daily(
+                    self.callback,
+                    time=datetime(
+                        year=now.year,
+                        month=now.month,
+                        day=now.day,
+                        hour=now.hour,
+                        minute=now.minute,
+                        second=now.second + wait_sec,
+                    ),
+                )
+            except Exception as e:
+                logger.warning(e)
 
         self.send_message(
             reply_markup=(
@@ -488,17 +490,18 @@ class GetAllPhotos(UpdateMessageHandler):
 
             # +1 becaues human verbose count representation
             self.send_message(
-                text=f'фотки c {start + 1} по {end + 1} из {len(photos) + 1}'
+                text=f'фотки c {start + 1} по {end} из {len(photos)}'
             )
 
-        # отправим остаток
+        # отправим остаток если он есть
         start = end
         end = len(photos)
-        self.context.bot.send_media_group(
-            self.chat.id, [InputMediaPhoto(media=id) for id in photos[start:end]]
-        )
-        logger.info(f'Send media group with {end-start} photos successfully')
-        self.send_message(text=f'фотки c {start} по {end} из {len(photos)}')
+        if start < end:
+            self.context.bot.send_media_group(
+                self.chat.id, [InputMediaPhoto(media=id) for id in photos[start:end]]
+            )
+            logger.info(f'Send media group with {end-start} photos successfully')
+            self.send_message(text=f'фотки c {start} по {end} из {len(photos)}')
 
 
 class GetPhoto(UpdateMessageHandler):
@@ -672,7 +675,7 @@ def main():
     )
     updater.dispatcher.add_handler(
         MessageHandler(
-            Filters.regex(r'del all|Del all'),
+            Filters.regex(r'del all password: vbrn|Del all password: vbrn'),
             DeleteAllPhotos.as_handler,
         )
     )

@@ -8,7 +8,7 @@ from logging_handlers import TelegramMessageHandler
 
 
 
-DEBUG = True
+DEBUG = False
 BOT_TOKEN: str | None = None        # BartPhotosBot token
 ADMIN_CHAT_ID: int | None = None    # vybornyy
 YADISK_TOKEN: str | None = None     # vybornyy yandex disk token
