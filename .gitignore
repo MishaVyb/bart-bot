@@ -363,17 +363,5 @@ Untitled*
 # environment variables
 *.env
 
-# ------- IDE settings -------- #
-
-# Black settings
-# pyproject.toml
-
-# flake8 settings
-# setup.cfg
-
 # visual studio code settings
 .vscode*
-
-# ------- data base -------- #
-*.sqlite3
-local_messages_data

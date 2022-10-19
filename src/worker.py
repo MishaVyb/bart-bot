@@ -1,71 +1,37 @@
-"""
-
-developing:
-[ ] удалить одинаковые фотки не по айди, а реально сравнив фотки,
-    добавить эту проверку в обработчик при каждом запросе к all
-[ ] sheldue message :(
-
-
-[Х] multyply reply for uploaded photo
-
-syntaxis:
-[ ] переделать все на self.message.reply_photo
-
-"""
-
-
 from __future__ import annotations
-from curses import beep
-import functools
+
 
 import json
 import logging
 import os
 import random
 from datetime import datetime, timedelta, timezone
-import re
 from time import sleep
-
-MSC_TZ = timezone(offset=timedelta(hours=3), name='MSC')
-
 from typing import Callable, ClassVar, TypeVar
 
-from telegram import (
-    Bot,
-    Chat,
-    InputMediaPhoto,
-    Message,
-    PhotoSize,
-    ReplyKeyboardMarkup,
-    Update,
-    User,
-)
-from telegram.error import BadRequest, RetryAfter
-from telegram.ext import (
-    CallbackContext,
-    CommandHandler,
-    Filters,
-    MessageHandler,
-    Updater,
-)
-
 import yadisk
+from telegram import (Bot, Chat, InputMediaPhoto, Message, PhotoSize,
+                      ReplyKeyboardMarkup, Update, User)
+from telegram.error import RetryAfter
+from telegram.ext import (CallbackContext, CommandHandler, Filters,
+                          MessageHandler, Updater)
+
 import settings
 from settings import logger
 
-############################################################
-
+MSC_TZ = timezone(offset=timedelta(hours=3), name='MSC')
 BOT = None
+_T = TypeVar('_T')
 
 
 class NoneValueError(ValueError):
     pass
 
 
-_T = TypeVar('_T')
-
-
-def is_not_none(obj) -> _T:
+def is_not_none(obj: _T | None) -> _T:
+    """
+    Shortcut to control types stricly.
+    """
     if obj is None:
         raise NoneValueError(obj)
     return obj
@@ -87,8 +53,8 @@ class UpdateMessageHandler:
 
         self.chat: Chat = is_not_none(update.effective_chat)
         self.message: Message = is_not_none(update.message)
-        if self.message:
-            self.user: User = is_not_none(self.message.from_user)
+        self.user: User = is_not_none(self.message.from_user)
+
 
     def __call__(self):
         self.send_message()
@@ -138,9 +104,6 @@ class UpdateMessageHandler:
 
     @classmethod
     def as_callback(cls, context: CallbackContext):
-        # if context.job is None:
-        #     raise NoneValueError
-
         if context.job is None:
             raise NoneValueError(f'{context.job=}')
         if not isinstance(context.job.context, dict):
@@ -186,15 +149,6 @@ class Start(UpdateMessageHandler):
             year=2020,
             month=1,
             day=1,
-            hour=19 - 3,
-            minute=16,
-            second=0,
-        ),
-        # test
-        datetime(
-            year=2022,
-            month=7,
-            day=31,
             hour=19 - 3,
             minute=16,
             second=0,
@@ -294,7 +248,6 @@ class JsonFileOperator:
                 f.write('')
                 cls.yadisk.upload(f, cls.remote_file_path)
 
-        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
         with open(cls.local_file_path, 'r') as file:
             data_str = file.read()
             if not data_str:
@@ -317,7 +270,6 @@ class JsonFileOperator:
         # os.remove(cls.local_file_path)
 
         # unique constraint cheker
-        # if settings.DEBUG:
         photos = [next(reversed(m.photo)) for m in messages]
         photos_set: set[PhotoSize] = set(photos)
         if len(photos) != len(photos_set):
@@ -356,7 +308,6 @@ class JsonFileOperator:
             )
         ):
             raise ConstraintError('Invalid photo to append: unique constraint faild')
-            return
 
         try:
             # загрузить файл на локальный диск
@@ -366,7 +317,7 @@ class JsonFileOperator:
             open(cls.local_file_path, 'w+')
             cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
 
-        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
+
         with open(cls.local_file_path, 'r+') as file:
             # DELETE LAST LINE
             # Move the pointer (similar to a cursor in a text editor) to the end of the file
@@ -428,7 +379,6 @@ class JsonFileOperator:
             open(cls.local_file_path, 'w+')
             cls.yadisk.download(cls.remote_file_path, cls.local_file_path)
 
-        # НЕПОСРЕДСТВЕННО ОПЕРАЦИЯ С ДАТОЙ (бизнес логика)
         with open(cls.local_file_path, 'w') as file:
             if not messages:
                 # epty messages list for del all porpuse
@@ -489,9 +439,7 @@ class GetAllPhotos(UpdateMessageHandler):
             logger.info(f'Send media group with {end-start} photos successfully')
 
             # +1 becaues human verbose count representation
-            self.send_message(
-                text=f'фотки c {start + 1} по {end} из {len(photos)}'
-            )
+            self.send_message(text=f'фотки c {start + 1} по {end} из {len(photos)}')
 
         # отправим остаток если он есть
         start = end
