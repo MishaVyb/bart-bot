@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, TypeAlias
 
 from telegram import Update
 
-# add application workdir
+# add application workdir.
 # sys.path.append(str(Path(__file__).resolve() / 'src'))
 sys.path.append(str(Path(__file__).resolve().parent))
 
