@@ -19,9 +19,11 @@ if __version_info__ < (20, 0, 0, 'alpha', 1):
 # logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
+
+handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
-logger.addHandler(handler)
+if not logger.handlers:
+    logger.addHandler(handler)
 
 # secrets
 class Confing(BaseSettings):
@@ -29,6 +31,7 @@ class Confing(BaseSettings):
     admin_chat_id: int | None
     yadisk_token: str | None
     debug: bool = True
+    app_name = 'bart-bot'
 
     class Config:
         env_file = '.env'

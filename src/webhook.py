@@ -1,6 +1,10 @@
+"""
+Enterpoint for Yandex.Cloud function calls which used as webhook for Telegram.
+"""
+import json
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TypeAlias
 
 from telegram import Update
 
@@ -9,16 +13,19 @@ from telegram import Update
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from application import app
+from configurations import CONFIG, logger
 
-if TYPE_CHECKING:
-    _RuntimeContext: TypeAlias = object  # NOTE: ...
+_RuntimeContext: TypeAlias = object  # NOTE: ...
 
 
 async def handler(event: dict, context: _RuntimeContext):
+    logger.info(f'Handle updates for {CONFIG.app_name}. ')
     try:
         # NOTE
-        # raw `request body` already parsed to json dict by Yandex server internally
+        # depending on Yandex.Functions settings, request body could be converter or not
         data = event['body']
+        if isinstance(data, str):
+            data = json.loads(data)
 
         await app.initialize()
         await app.process_update(Update.de_json(data=data, bot=app.bot))

@@ -9,9 +9,11 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent / 'src'))
 
 from application import app
+from configurations import CONFIG, logger
 
 
 def main() -> None:
+    logger.info(f'Start {CONFIG.app_name} polling. Listening for updates. ')
     app.run_polling()
 
 
