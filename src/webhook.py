@@ -19,10 +19,10 @@ _RuntimeContext: TypeAlias = object  # NOTE: ...
 
 
 async def handler(event: dict, context: _RuntimeContext):
-    logger.info(f'Handle updates for {CONFIG.app_name}. ')
+    logger.info(f'Handle updates for {CONFIG.appname}. ')
     try:
         # NOTE
-        # depending on Yandex.Functions settings, request body could be converter or not
+        # depending on Yandex.Functions settings, request body could be not parsed yet
         data = event['body']
         if isinstance(data, str):
             data = json.loads(data)
@@ -38,3 +38,7 @@ async def handler(event: dict, context: _RuntimeContext):
             'statusCode': 200,
             'body': 'Proceeded successfully. ',
         }
+
+
+# TODO
+# set web hook function...

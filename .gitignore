@@ -355,13 +355,15 @@ venv*
 
 # macOS system files
 .DS_Store
-*.zip
 
 # IDE settings
 .vscode*
 
 # local storage
 *.sqlite3
+*.data
+*dump.json
+*.zip
 
 # dev tools
 makefile

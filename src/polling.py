@@ -13,7 +13,7 @@ from configurations import CONFIG, logger
 
 
 def main() -> None:
-    logger.info(f'Start {CONFIG.app_name} polling. Listening for updates. ')
+    logger.info(f'Start {CONFIG.appname} polling. Listening for updates. ')
     app.run_polling()
 
 

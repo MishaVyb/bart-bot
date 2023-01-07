@@ -3,6 +3,7 @@ ignorePaths:
   - .gitignore
   - requirements.txt
   - alembic*
+  - bart-bot.content.yaml
 allowCompoundWords: true
 dictionaries:
   - python
@@ -13,8 +14,10 @@ words:
   - isort
   - Misha
   - mypy
+  - no_photos
   - ondelete
   - onupdate
+  - persistences
   - psycopg
   - pydantic
   - pytest
@@ -23,6 +26,7 @@ words:
   - venv
   - vybornyy
   - yadisk
+  - feedme
 ignoreWords: []
 import: []
 enableFiletypes:

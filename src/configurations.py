@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import BaseSettings
+from pydantic import BaseSettings, SecretStr
 from telegram import __version__ as TG_VER
 
 # check python version before starting app
@@ -27,14 +27,22 @@ if not logger.handlers:
 
 # secrets
 class Confing(BaseSettings):
-    bot_token: str
+    bot_token: SecretStr
+    yadisk_token: SecretStr
+
     admin_chat_id: int | None
-    yadisk_token: str | None
     debug: bool = True
-    app_name = 'bart-bot'
+    appname: str = 'bart-bot'
+    data_filepath: str = f'{appname}.data'
+    dump_filepath: str = f'{appname}.dump.json'
+    content_filepath: str = f'{appname}.content.yaml'
+
+    admin_id: int
+    admin_sharings_ids: list[int]
 
     class Config:
         env_file = '.env'
 
 
 CONFIG = Confing()
+logger.debug(f'Running application under: {CONFIG.dict()}')
