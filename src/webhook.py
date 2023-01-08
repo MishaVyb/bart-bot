@@ -19,14 +19,14 @@ _RuntimeContext: TypeAlias = object  # NOTE: ...
 
 
 async def handler(event: dict, context: _RuntimeContext):
-    logger.info(f'Handle updates for {CONFIG.appname}. ')
-    try:
-        # NOTE
-        # depending on Yandex.Functions settings, request body could be not parsed yet
-        data = event['body']
-        if isinstance(data, str):
-            data = json.loads(data)
+    # NOTE
+    # depending on Yandex.Functions settings, request body could be not parsed yet
+    data = event['body']
+    if isinstance(data, str):
+        data = json.loads(data)
 
+    try:
+        logger.info(f'Handle updates for {CONFIG.appname}. ')
         await app.initialize()
         await app.process_update(Update.de_json(data=data, bot=app.bot))
     except:
@@ -38,6 +38,9 @@ async def handler(event: dict, context: _RuntimeContext):
             'statusCode': 200,
             'body': 'Proceeded successfully. ',
         }
+    finally:
+        logger.debug('Finally clause. There are nothing to do.')
+        # NOTE.....
 
 
 # TODO

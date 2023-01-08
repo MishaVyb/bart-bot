@@ -1,11 +1,10 @@
 import json
 import random
 
-from telegram import Bot, Message, ReplyKeyboardMarkup, Update
+from telegram import Message
 from telegram.ext import ContextTypes
 
 from configurations import CONFIG, logger
-from content import CONTENT
 from exceptions import NoPhotosException
 
 
@@ -32,7 +31,13 @@ async def update_history(message: Message, context: ContextTypes.DEFAULT_TYPE):
     history: list = data['storages'][storage_id]['history']
     history.append(message)
 
-    logger.debug(f'Successfully add message to history. Total: {len(history)}. ')
+    logger.debug(
+        f'Successfully add message to history. Total: {len(history)}. Updating data. '
+    )
+
+    # NOTE
+    # will save all data in memory to pickle file(s)
+    await context.application.persistence.flush()
 
 
 async def get_photo_id(context: ContextTypes.DEFAULT_TYPE):
