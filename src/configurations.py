@@ -3,7 +3,7 @@ import logging
 from pydantic import BaseSettings, SecretStr
 from telegram import __version__ as TG_VER
 
-# check python version before starting app
+# checking python version before starting app
 try:
     from telegram import __version_info__
 except ImportError:
@@ -25,7 +25,7 @@ handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
 if not logger.handlers:
     logger.addHandler(handler)
 
-# secrets
+# secrets and app settings
 class Confing(BaseSettings):
     bot_token: SecretStr
     yadisk_token: SecretStr
@@ -33,7 +33,7 @@ class Confing(BaseSettings):
     admin_chat_id: int | None
     debug: bool = True
     appname: str = 'bart-bot'
-    data_filepath: str = f'{appname}.data'
+    remote_filepath: str = f'{appname}.data'
     dump_filepath: str = f'{appname}.dump.json'
     content_filepath: str = f'{appname}.content.yaml'
 

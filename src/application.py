@@ -1,10 +1,4 @@
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    PicklePersistence,
-    filters,
-)
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 import handlers
 from configurations import CONFIG
@@ -15,8 +9,7 @@ app = (
     Application.builder()
     .token(CONFIG.bot_token.get_secret_value())
     .persistence(
-        YandexDiskPicklePersistence(filepath=CONFIG.data_filepath),
-        # PicklePersistence(filepath=CONFIG.data_filepath),
+        YandexDiskPicklePersistence(filepath=CONFIG.remote_filepath, single_file=False)
     )
     .build()
 )

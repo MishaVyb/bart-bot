@@ -10,6 +10,7 @@ dictionaries:
 words:
   - apscheduler
   - clsname
+  - feedme
   - grnd
   - isort
   - Misha
@@ -18,15 +19,16 @@ words:
   - ondelete
   - onupdate
   - persistences
+  - Pickler
   - psycopg
   - pydantic
   - pytest
   - sqlalchemy
   - testdb
+  - Unpickler
   - venv
   - vybornyy
   - yadisk
-  - feedme
 ignoreWords: []
 import: []
 enableFiletypes:
