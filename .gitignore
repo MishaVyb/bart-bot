@@ -366,7 +366,7 @@ venv*
 *.zip
 
 # dev tools
-makefile
+# makefile
 
 # tmp files
 *Untitled*

@@ -35,10 +35,6 @@ async def update_history(message: Message, context: ContextTypes.DEFAULT_TYPE):
         f'Successfully add message to history. Total: {len(history)}. Updating data. '
     )
 
-    # NOTE
-    # will save all data in memory to pickle file(s)
-    await context.application.persistence.flush()
-
 
 async def get_photo_id(context: ContextTypes.DEFAULT_TYPE):
     bot, user, data = context.bot, context.user_data, context.bot_data

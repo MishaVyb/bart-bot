@@ -53,5 +53,4 @@ class BotMessages(BaseModel):
 
 
 BotContent.update_forward_refs()
-# BotMessages.update_forward_refs()
 CONTENT = BotContent.parse_yaml(CONFIG.content_filepath)

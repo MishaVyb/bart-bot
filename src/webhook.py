@@ -8,17 +8,16 @@ from typing import TypeAlias
 
 from telegram import Update
 
-# add application workdir.
-# sys.path.append(str(Path(__file__).resolve() / 'src'))
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from application import app
 from configurations import CONFIG, logger
 
-_RuntimeContext: TypeAlias = object  # NOTE: ...
+_RuntimeContext: TypeAlias = object  # special yandex.cloud functions object
 
 
-async def handler(event: dict, context: _RuntimeContext):
+async def gateway(event: dict, context: _RuntimeContext):
+
     # NOTE
     # depending on Yandex.Functions settings, request body could be not parsed yet
     data = event['body']
@@ -26,8 +25,10 @@ async def handler(event: dict, context: _RuntimeContext):
         data = json.loads(data)
 
     try:
-        logger.info(f'Handle updates for {CONFIG.appname}. ')
-        await app.initialize()
+        logger.info(f'Handle update for {CONFIG.appname}. Start app. ')
+        if not app.running:
+            await app.initialize()
+            await app.start()
         await app.process_update(Update.de_json(data=data, bot=app.bot))
     except:
         # TODO
@@ -39,8 +40,9 @@ async def handler(event: dict, context: _RuntimeContext):
             'body': 'Proceeded successfully. ',
         }
     finally:
-        logger.debug('Finally clause. There are nothing to do.')
-        # NOTE.....
+        logger.info('Stop application. ')
+        await app.stop()
+        await app.shutdown()
 
 
 # TODO

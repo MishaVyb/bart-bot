@@ -9,6 +9,7 @@ dictionaries:
   - python
 words:
   - apscheduler
+  - buildx
   - clsname
   - feedme
   - grnd
@@ -37,3 +38,4 @@ enableFiletypes:
   - makefile
   - markdown
   - toml
+  - makefile
