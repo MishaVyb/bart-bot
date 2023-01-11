@@ -52,7 +52,7 @@ update_server: host := 158.160.24.209
 update_server: workdir := bart-bot
 update_server:
 	@echo "## Copy files to project dir at production server ##"
-	scp bart-bot.dump.json $(user)@$(host):/home/$(user)/$(workdir)/data/
+	scp data/bart-bot.dump.json $(user)@$(host):/home/$(user)/$(workdir)/data/
 	scp docker-compose.yml $(user)@$(host):/home/$(user)/$(workdir)/
 	scp build.env $(user)@$(host):/home/$(user)/$(workdir)/
 
