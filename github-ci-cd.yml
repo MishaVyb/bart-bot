@@ -60,7 +60,6 @@ jobs:
   #         push: true
   #         tags: ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
 
-
   Deploy:
     runs-on: ubuntu-latest
     #needs: Delivery
