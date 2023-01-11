@@ -16,7 +16,7 @@ services:
     # depends_on:
     #   - db
     volumes:
-      - ./data/:/bar-bot/data # handle bart-bot.dump.json file
+      - ./data/:/bart-bot/data # handle bart-bot.dump.json file
 
 # volumes:
 #   postgres:
