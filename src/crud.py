@@ -1,49 +1,38 @@
-import json
-import random
+from typing import Type, TypeVar
 
-from telegram import Message
-from telegram.ext import ContextTypes
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
-from configurations import CONFIG, logger
-from exceptions import NoPhotosException
-
-
-async def loaddata(context: ContextTypes.DEFAULT_TYPE):
-    """
-    Upload messages from dump json file to user history storage.
-    Usefull for data migration from previous application version.
-    """
-    bot, user, data = context.bot, context.user_data, context.bot_data
-    with open(CONFIG.dump_filepath, 'r') as file:
-        messages = json.loads(file.read())
-
-    storage_id = user['storage_id']
-    history: list = data['storages'][storage_id]['history']
-    history += Message.de_list(messages, bot=bot)
-
-    logger.debug(f'Successfully load history data. Total: {len(history)}. ')
+from configurations import logger
+from database import BaseModel, MessageModel
 
 
-async def update_history(message: Message, context: ContextTypes.DEFAULT_TYPE):
-    bot, user, data = context.bot, context.user_data, context.bot_data
-
-    storage_id = user['storage_id']
-    history: list = data['storages'][storage_id]['history']
-    history.append(message)
-
-    logger.debug(
-        f'Successfully add message to history. Total: {len(history)}. Updating data. '
+def append_history(session: AsyncSession, user_id: int, message_id: int, message_raw: dict):
+    session.add(
+        MessageModel(user_id=user_id, id=message_id, raw=message_raw),
     )
 
 
-async def get_photo_id(context: ContextTypes.DEFAULT_TYPE):
-    bot, user, data = context.bot, context.user_data, context.bot_data
-    logger.debug(f'Geting photo for {user}. ')
+_ModelType = TypeVar('_ModelType', bound=BaseModel)
 
-    storage_id = user['storage_id']
-    history: list = data['storages'][storage_id]['history']
-    if not history:
-        raise NoPhotosException
 
-    message = random.choice(data['storages'][storage_id]['history'])
-    return next(reversed(message.photo)).file_id
+def get_or_create(
+    session: Session, model: Type[_ModelType], instance_kwargs: dict, extra_kwargs: dict = {}, *, echo: bool = False
+) -> _ModelType:
+    """
+    Get or create model instance if it does not exist.
+
+    `instance_kwargs`: taking for session query
+    `extra_kwargs`: taking for instance creation united with `instance_kwargs`
+    """
+    instance = session.query(model).filter_by(**instance_kwargs).one_or_none()
+    if instance:
+        return instance
+
+    instance_kwargs.update(extra_kwargs)
+    instance = model(**instance_kwargs)
+    session.add(instance)
+    if echo:
+        logger.info(f'{instance} added to database. ')
+
+    return instance

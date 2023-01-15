@@ -19,9 +19,13 @@ install:
 	@echo "Enter to proceed. Ctr-C to abort."
 	@read
 	@pip3 install --upgrade pip;
+
 	pip install black mypy isort
 	pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort Flake8-pyproject
 	pip install autoflake==1.7.8
+	pip install sqlalchemy[asyncio] asyncpg psycopg2-binary
+	pip install types-PyYAML
+
 	pip install pre-commit
 	pre-commit install
 
