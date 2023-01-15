@@ -12,6 +12,7 @@ words:
   - asyncpg
   - buildx
   - clsname
+  - dotenv
   - feedme
   - grnd
   - isort

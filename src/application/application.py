@@ -1,9 +1,8 @@
 from types import NoneType
 
-from app.application import LayeredApplication
-from telegram.ext import Application, BaseHandler, CommandHandler, ContextTypes
-from telegram.ext._application import DEFAULT_GROUP
+from telegram.ext import ContextTypes
 
+from application.base import LayeredApplication
 from application.middlewares import (
     history_middleware,
     session_middleware,

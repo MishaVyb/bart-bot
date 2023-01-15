@@ -20,14 +20,17 @@ install:
 	@read
 	@pip3 install --upgrade pip;
 
+	# format tools:
 	pip install black mypy isort
 	pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort Flake8-pyproject
 	pip install autoflake==1.7.8
-	pip install sqlalchemy[asyncio] asyncpg psycopg2-binary
 	pip install types-PyYAML
-
 	pip install pre-commit
 	pre-commit install
+
+	# prod tools:
+	pip install python-telegram-bot pydantic pydantic[dotenv]
+	pip install sqlalchemy[asyncio] asyncpg psycopg2-binary alembic
 
 
 format:
