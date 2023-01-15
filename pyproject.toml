@@ -8,7 +8,7 @@ skip-string-normalization = 1       # disable converting single quote to double
 # by default black exclude all .gitignore files. here is regex pattern to extend this list
 # NOTE! list of files name is not supported, only regex patterns
 # WARNING! also pass this list of files to pre-commit-config.
-extend-exclude = 'alembic/|migrations/'
+# extend-exclude = 'alembic/|migrations/'
 
 [tool.isort]
 skip_glob = '*tmp*'            # ignoring tmp files
