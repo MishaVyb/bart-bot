@@ -8,8 +8,7 @@ from database.base import BaseModel
 
 
 class UserModel(BaseModel):
-    # history_images: list[SharedMediaModel] = relationship('SharedMediaModel', backref='user')
-    history_images: list[MessageModel] = relationship('MessageModel', backref='user')
+    history: list[MessageModel] = relationship('MessageModel', backref='user')
 
 
 class UserPropertyMixin:
@@ -25,12 +24,10 @@ class UserPropertyMixin:
 class MessageModel(BaseModel, UserPropertyMixin):
     """Raw"""
 
-    raw: Mapped[dict] = Column(JSON)
-    image_id: Mapped[dict] = Column(Integer)
+    message_id: Mapped[int] = Column(Integer, nullable=False, unique=False)
+    """
+    Telegram defined id. It counts every message from user and bot for each chat separately from others.
+    Therefore `unique=False`.
+    """
 
-
-# class SharedMediaModel(BaseModel, UserPropertyMixin):
-#     """
-#     photo / video / ...
-#     """
-#     pass
+    raw: Mapped[dict] = Column(JSON, nullable=False)

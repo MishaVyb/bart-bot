@@ -9,7 +9,7 @@ from database import BaseModel, MessageModel
 
 def append_history(session: AsyncSession, user_id: int, message_id: int, message_raw: dict):
     session.add(
-        MessageModel(user_id=user_id, id=message_id, raw=message_raw),
+        MessageModel(user_id=user_id, message_id=message_id, raw=message_raw),
     )
 
 
