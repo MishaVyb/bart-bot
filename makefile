@@ -55,7 +55,7 @@ push:
 
 
 update_server: user := vybornyy
-update_server: host := 158.160.24.209
+update_server: host := 158.160.11.4
 update_server: workdir := bart-bot
 update_server:
 	@echo "## Copy files to project dir at production server ##"
