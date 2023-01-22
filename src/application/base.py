@@ -6,18 +6,18 @@ from telegram.ext import Application, BaseHandler, CommandHandler
 from telegram.ext._application import DEFAULT_GROUP
 
 from application.context import CustomContext
+from configurations import logger
 
 
 class LayeredApplication(Application):
     middlewares: list[Callable[[Update, CustomContext], AsyncContextDecorator]] = []
 
     def command(self, command=None, filters=None, block=True, group: int = DEFAULT_GROUP):
-        return lambda wrapped: self._command_decorator(wrapped, command, filters, block, group)
+        def decorator(wrapped: Callable):
+            kwargs = dict(command=command or wrapped.__name__, filters=filters, block=block)
+            return self._base_handler_decorator(wrapped, CommandHandler, handler_kwargs=kwargs, group=group)
 
-    def _command_decorator(self, wrapped: Callable, command=None, filters=None, block=True, group: int = DEFAULT_GROUP):
-        command = command or wrapped.__name__
-        kwargs = dict(command=command, filters=filters, block=block)
-        return self._base_handler_decorator(wrapped, CommandHandler, handler_kwargs=kwargs, group=group)
+        return decorator
 
     def _base_handler_decorator(
         self, callback: Callable, handler_class: Type[BaseHandler], *, handler_kwargs: dict, group: int = DEFAULT_GROUP
@@ -36,4 +36,5 @@ class LayeredApplication(Application):
             # [finally] call for multilayered handler
             await wrapped(update, context)
 
+        logger.debug(f'Add <{callback.__name__}> handler. ')
         self.add_handler(handler_class(callback=_multilayered_handler_callback, **handler_kwargs), group)

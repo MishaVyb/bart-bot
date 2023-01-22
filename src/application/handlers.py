@@ -16,6 +16,3 @@ async def start(update: Update, context: CustomContext) -> None:
     )
 
     logger.debug('start handler out')
-
-
-logger.debug('Handlers have been initialized. ')
