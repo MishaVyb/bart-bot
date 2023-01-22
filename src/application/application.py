@@ -3,13 +3,13 @@ from types import NoneType
 from telegram.ext import ContextTypes
 
 from application.base import LayeredApplication
+from application.context import CustomContext
 from application.middlewares import (
     history_middleware,
     session_middleware,
     user_middleware,
 )
 from configurations import CONFIG
-from context import CustomContext
 
 
 async def post_init(app: LayeredApplication):

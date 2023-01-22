@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import Application, BaseHandler, CommandHandler
 from telegram.ext._application import DEFAULT_GROUP
 
-from context import CustomContext
+from application.context import CustomContext
 
 
 class LayeredApplication(Application):
