@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
 from telegram import Update
 
+import database
 from application.context import CustomContext
 from configurations import CONFIG, logger
 from database import crud

@@ -1,12 +1,14 @@
 from telegram import ReplyKeyboardMarkup, Update
 
-from application.application import app
+from application.base import APPHandlers
 from application.context import CustomContext
 from configurations import logger
 from content import CONTENT
 
+handler = APPHandlers()
 
-@app.command()
+
+@handler.command()
 async def start(update: Update, context: CustomContext) -> None:
     logger.debug('start handler in')
 

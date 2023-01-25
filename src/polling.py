@@ -6,7 +6,7 @@ from configurations import CONFIG, logger
 
 
 def main() -> None:
-    logger.info(f'Start {CONFIG.appname} polling. Listening for updates. ')
+    logger.debug(f'Start {CONFIG.botname} polling under: {CONFIG}. Listening for updates...')
     app.run_polling()
 
 

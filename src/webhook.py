@@ -25,7 +25,7 @@ async def gateway(event: dict, context: _RuntimeContext):
         data = json.loads(data)
 
     try:
-        logger.info(f'Handle update for {CONFIG.appname}. Start app. ')
+        logger.info(f'Handle update for {CONFIG.botname}. Start app. ')
         if not app.running:
             await app.initialize()
             await app.start()

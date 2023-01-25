@@ -8,6 +8,7 @@ allowCompoundWords: true
 dictionaries:
   - python
 words:
+  - anyio
   - apscheduler
   - asyncpg
   - buildx
@@ -25,6 +26,7 @@ words:
   - Pickler
   - psycopg
   - pydantic
+  - pyrogram
   - pytest
   - sqlalchemy
   - testdb

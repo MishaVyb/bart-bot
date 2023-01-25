@@ -365,8 +365,9 @@ venv*
 *dump.json
 *.zip
 
-# dev tools
-# makefile
+# telegram auth sessions
+*.session
+*.session-journal
 
 # tmp files
 *Untitled*

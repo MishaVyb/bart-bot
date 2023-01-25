@@ -4,20 +4,21 @@ from telegram.ext import ContextTypes
 
 from application.base import LayeredApplication
 from application.context import CustomContext
-from application.middlewares import (
-    history_middleware,
-    session_middleware,
-    user_middleware,
-)
-from configurations import CONFIG
+from application.handlers import handler
+from configurations import CONFIG, logger
 
 
 async def post_init(app: LayeredApplication):
-    app.middlewares = [
-        session_middleware,
-        user_middleware,
-        history_middleware,
-    ]
+    logger.info('post init called')
+
+    # app.add_middlewares(
+    #     [
+    #         session_middleware,
+    #         user_middleware,
+    #         history_middleware,
+    #     ]
+    # )
+    app.add_handlers(handler)
 
 
 NoneContextType = ContextTypes(  # in-memory data is deprecated for our app
@@ -27,11 +28,23 @@ NoneContextType = ContextTypes(  # in-memory data is deprecated for our app
     context=CustomContext,
 )
 
-app: LayeredApplication = (  # TOTO generic annotations
+builder = (
     LayeredApplication.builder()
     .token(CONFIG.bot_token.get_secret_value())
     .context_types(NoneContextType)
     .application_class(LayeredApplication)
     .post_init(post_init)
-    .build()
 )
+app: LayeredApplication = builder.build()
+
+
+async def error_handler(update: object, context) -> None:
+    logger.error('')
+    logger.error(
+        '\n\n------------------------------------------------------------------'
+        '\n[Exception while handling an update] ',
+        exc_info=context.error,
+    )
+
+
+app.add_error_handler(error_handler)
