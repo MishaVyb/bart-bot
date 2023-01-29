@@ -1,6 +1,6 @@
 [tool.mypy]
 ignore_missing_imports = true
-
+no_implicit_optional = false
 
 [tool.black]
 line-length = 120                  # max line length

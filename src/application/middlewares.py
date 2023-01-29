@@ -52,7 +52,11 @@ async def session_middleware(update: Update, context: CustomContext):
     async with session_context() as session:
         setattr(context, 'session', session)
         yield
-        delattr(context, 'session')
+        try:
+            delattr(context, 'session')
+        except Exception:
+            logger.warn(f'Delleting session attr failed. ')  # FIXME
+
     logger.debug('session middleware out')
 
 
