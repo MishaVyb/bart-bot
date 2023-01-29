@@ -11,6 +11,7 @@ words:
   - anyio
   - apscheduler
   - asyncpg
+  - barticheg
   - buildx
   - clsname
   - dotenv
@@ -28,6 +29,7 @@ words:
   - pydantic
   - pyrogram
   - pytest
+  - simusik
   - sqlalchemy
   - testdb
   - Unpickler

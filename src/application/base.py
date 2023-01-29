@@ -3,7 +3,6 @@ from typing import Callable, TypeAlias
 
 from telegram import Update
 from telegram.ext import Application, BaseHandler, CommandHandler, ExtBot, JobQueue
-from telegram.ext._application import DEFAULT_GROUP
 
 from application.context import CustomContext
 from configurations import logger
@@ -33,7 +32,7 @@ class APPHandlers(list[BaseHandler]):
 
 MiddlewaresType: TypeAlias = list[Callable[[Update, CustomContext], AsyncContextDecorator]]
 
-
+# TODO rename to ???
 class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, None, JobQueue]):
     _middlewares: list[Callable[[Update, CustomContext], AsyncContextDecorator]] = []
 

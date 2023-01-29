@@ -58,7 +58,7 @@ class AppConfig(BaseSettings):
         return f'{db}+{dialect}://{user}:{password}@{host}:{port}/{name}'
 
     class Config:
-        env_file = 'local.env'
+        env_file = 'build.env', 'test.env', 'local.env'  # 'local.env' has the highest priority
         allow_mutation = False
 
     def __str__(self) -> str:
@@ -66,6 +66,7 @@ class AppConfig(BaseSettings):
 
 
 CONFIG = AppConfig()
+
 
 # logging
 # TODO:

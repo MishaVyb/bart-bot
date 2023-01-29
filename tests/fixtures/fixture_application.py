@@ -1,24 +1,20 @@
 import pytest
-from conftest import logger
-from telegram.ext import ContextTypes
 
 from application.application import NoneContextType, post_init
 from application.base import LayeredApplication
-from application.context import CustomContext
-from application.handlers import handler
-from application.middlewares import (
-    history_middleware,
-    session_middleware,
-    user_middleware,
-)
-from configurations import CONFIG, AppConfig, logger
+from configurations import AppConfig, logger
+from tests.conftest import logger
 
 
 @pytest.fixture(autouse=True)
 async def application(config: AppConfig):
-    logger.info('Stat app polling... ')
     builder = (
         LayeredApplication.builder()
+        #
+        # PTB does not have native support for Telegram Test environment.
+        # But it could be handled by adding '/test' suffix to Bot token.
+        #
+        # Issue: https://github.com/python-telegram-bot/python-telegram-bot/issues/3355
         .token(config.bot_token.get_secret_value() + '/test')
         .context_types(NoneContextType)
         .application_class(LayeredApplication)
@@ -30,6 +26,8 @@ async def application(config: AppConfig):
     await app.initialize()  # initialize Does *not* call `post_init` - that is only done by run_polling/webhook
     await app.post_init(app)
     await app.start()
+
+    logger.info('Stat app polling... ')
     await app.updater.start_polling()
 
     yield app

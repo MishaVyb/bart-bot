@@ -1,12 +1,12 @@
 import pytest
-from conftest import logger
 
 from configurations import CONFIG, AppConfig
+from tests.conftest import TestConfig, logger
 
 
 @pytest.fixture(scope='session')
 def config():
-    return AppConfig(_env_file='test.env', botname='TestBartBot')
+    return TestConfig(_env_file='test.env', botname='TestBartBot')
 
 
 @pytest.fixture(scope='session', autouse=True)

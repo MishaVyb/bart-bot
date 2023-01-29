@@ -1,5 +1,4 @@
 import pytest
-from conftest import logger
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -7,6 +6,7 @@ from sqlalchemy_utils import create_database, database_exists, drop_database
 
 from configurations import AppConfig
 from database import BaseModel
+from tests.conftest import logger
 
 
 @pytest.fixture(scope='session')
@@ -14,8 +14,8 @@ def engine(config: AppConfig):
     return create_engine(config.db_uri(dialect='psycopg2'), echo=config.sql_logs)
 
 
-@pytest.fixture(autouse=False, scope='session')
-def setup_database(config: AppConfig, engine: Engine):
+@pytest.fixture(autouse=True, scope='session')
+def setup_database(engine: Engine):
     logger.debug(f'Set up test database: {engine.url=}. ')
 
     if database_exists(engine.url):
@@ -31,7 +31,7 @@ def setup_database(config: AppConfig, engine: Engine):
         drop_database(engine.url)
 
 
-@pytest.fixture(autouse=False, scope='function')
+@pytest.fixture(autouse=True, scope='function')
 def setup_tables(engine: Engine):
     BaseModel.metadata.create_all(engine)
     yield
