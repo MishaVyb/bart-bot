@@ -6,7 +6,7 @@ from configurations import AppConfig, logger
 from tests.conftest import logger
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope='session')
 async def application(config: AppConfig):
     builder = (
         LayeredApplication.builder()

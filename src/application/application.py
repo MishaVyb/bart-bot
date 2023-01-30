@@ -1,7 +1,7 @@
 from types import NoneType
 
 import sqlalchemy
-from telegram.ext import ContextTypes
+from telegram.ext import ApplicationHandlerStop, ContextTypes
 
 from application.base import LayeredApplication
 from application.context import CustomContext
@@ -46,6 +46,7 @@ app: LayeredApplication = builder.build()
 
 
 async def error_handler(update: object, context: CustomContext) -> None:
+    # UNUSED
     if isinstance(context.error, sqlalchemy.exc.IntegrityError):
         logger.error(f'IntegrityError: {context.error}')
 

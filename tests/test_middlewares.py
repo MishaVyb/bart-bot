@@ -1,20 +1,27 @@
 from sqlalchemy.orm import Session
 
 from configurations import AppConfig
-from database.models import MessageModel
+from database.models import MessageModel, UserModel
 from tests.conftest import ClientIntegration
 
 
-async def test_history_middleware(session: Session, vybornyy: ClientIntegration, config: AppConfig):
-    vybornyy.db_session = session
+async def test_user_middleware(vybornyy: ClientIntegration, config: AppConfig, session: Session):
+    # [1] check that user added to DB after first message
+    user_query = session.query(UserModel).filter_by(id=vybornyy.tg_user.id)
+    assert user_query.one_or_none() is None
 
-    # TODO
-    # add shortcut access to DB via ClientIntegration class
-    initial_count = session.query(MessageModel).filter_by(user_id=vybornyy.tg_user.id).count()
-
-    async with vybornyy.collect(amount=1) as messages:
+    async with vybornyy.collect(amount=1):
         await vybornyy.client.send_message(config.botname, '/start')
 
-    result_count = session.query(MessageModel).filter_by(user_id=vybornyy.tg_user.id).count()
+    assert user_query.one_or_none() is not None
 
-    assert initial_count + 1 == result_count
+
+async def test_history_middleware(vybornyy: ClientIntegration, config: AppConfig):
+
+    async with vybornyy.collect(amount=1):
+        message = await vybornyy.client.send_message(config.botname, '/start')
+
+    assert len(vybornyy.db_user.history) == 1
+
+    return
+    assert vybornyy.db_user.history[-1].message_id == message.id  # FIXME

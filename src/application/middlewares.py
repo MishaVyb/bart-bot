@@ -55,7 +55,7 @@ async def session_middleware(update: Update, context: CustomContext):
         try:
             delattr(context, 'session')
         except Exception:
-            logger.warn(f'Delleting session attr failed. ')  # FIXME
+            logger.error(f'Delleting session attr failed. ')  # FIXME
 
     logger.debug('session middleware out')
 
@@ -82,9 +82,8 @@ async def history_middleware(update: Update, context: CustomContext):
     # initialize crud in middleware and use in as func argument
     crud.append_history(
         context.session,
-        update.effective_user.id,  # type: ignore
-        update.message.id,
-        update.message.to_dict(),
+        update.effective_user,
+        update.message,
     )
     yield
 

@@ -2,15 +2,21 @@ from typing import Type, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from telegram._message import Message
+from telegram._user import User
 
 from configurations import logger
 from database import BaseModel, MessageModel
 
 
-def append_history(session: AsyncSession, user_id: int, message_id: int, message_raw: dict):
-    session.add(
-        MessageModel(user_id=user_id, message_id=message_id, raw=message_raw),
-    )
+def append_history(session: AsyncSession, effective_user: User, message: Message):
+    logger.debug(f'Append {message} to history. ')
+
+    # TODO discard "raw" column (create all fields for message object)
+    #
+    instance = MessageModel(user_id=effective_user.id, message_id=message.id, raw=message.to_dict())
+    session.add(instance)
+    return instance
 
 
 _ModelType = TypeVar('_ModelType', bound=BaseModel)

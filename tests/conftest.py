@@ -11,9 +11,10 @@ from pyrogram import Client, filters
 from pyrogram.errors.exceptions import bad_request_400
 from pyrogram.types import Message, User
 from sqlalchemy.orm import Session
+from telegram.ext import Application
 
+from application.context import CustomContext
 from configurations import AppConfig, logger
-from database import crud
 from database.models import UserModel
 
 pytest_plugins = [
@@ -64,13 +65,18 @@ class ClientIntegration:
         def fullname(self):
             return self.first_name, self.last_name
 
-    def __init__(self, config: TestConfig, db_session: Session | None = None) -> None:
+    def __init__(self, app: Application, config: TestConfig, db_session: Session | None = None) -> None:
+        self.app = app
         self.db_session = db_session
         self.config = config
-        self.target = config.botname
+        self.target = config.botname  # TODO: create telegram bot from @BotFather dynamically
         self.timeout = config.integration_timeout_sec
 
-        self._messages: list[Message] = []
+        self._collected_messages: list[Message] = []
+        self._collected_exceptions: list[Exception] = []
+
+    def __str__(self) -> str:
+        return f'<{self.target} integration ({self.credits})'
 
     # TODO: add backoff factor for auth fails
     @asynccontextmanager
@@ -93,10 +99,17 @@ class ClientIntegration:
             phone_code=self.config.get_confirmation_code(),
         )
 
-        # set main messages interceptor to collect received messages while acting tests:
-        self.client.on_message(filters.chat(self.target))(self._handler)  # type: ignore
+        # set main *any* message handler-callback to collect received messages while acting tests:
+        self.client.on_message(filters.chat(self.target))(self._client_message_registry)  # type: ignore
 
-        logger.info(f'Authorize {self}. ')
+        # set error handler-callback to store any exception received to tell paytest that integration test was failed
+        #
+        # NOTE
+        # if native application error handler rise ApplicationHandlerStop after error handling, this error handler
+        # will be omitted and 'self._collected_exceptions' list leaves empty
+        self.app.add_error_handler(self._app_exception_registry)
+
+        logger.info(f'Make authorization for {self}. ')
         try:
             # NOTE: some phonenumbers are registered already, some other not.
             # to be sure, handle sign up action by patching std input
@@ -111,7 +124,7 @@ class ClientIntegration:
             try:
                 await self.client.set_username(self.credits.username)
             except bad_request_400.UsernameNotModified as e:
-                logger.warning(e)
+                logger.debug(e)
             await self.client.update_profile(*self.credits.fullname)
 
             # TODO stop chat with target bot and /start it again
@@ -124,21 +137,26 @@ class ClientIntegration:
                 await self.client.set_username(None)
                 await self.client.stop()
             except ConnectionError as e:
-                logger.warning(f'Stopping cliend fails. Detail: {e}')
+                logger.warning(f'Stopping client fails: {e}')
 
     @asynccontextmanager
-    async def collect(self, *, amount: int = None, timeout: float = None):
+    async def collect(self, *, amount: int = None, timeout: float = None, strict: bool = True):
         """
         Context manager for Telegram Bot application test integration.
         """
-        self._messages.clear()
+        self._collected_messages.clear()
+        self._collected_exceptions.clear()
 
         try:
-            yield self._messages
+            yield self._collected_messages
         finally:
             await sleep(timeout or self.timeout)  # FIXME stupid sleep statement, handle coroutine waitings
+            if strict:
+                assert not self._collected_exceptions, 'Integration test failed. Unhandled app exception received. '
             if amount is not None:
-                assert len(self._messages) == amount, 'Integration test failed. Received unexpected messages amount. '
+                assert (
+                    len(self._collected_messages) == amount
+                ), 'Integration test failed. Received unexpected messages amount. '
 
     @contextmanager
     def _patch_signup_inout(self):
@@ -166,19 +184,29 @@ class ClientIntegration:
     @property
     def tg_user(self) -> User:
         if not self.client.me:
-            raise ValueError
+            raise ValueError(f'None {User}. Call for {self.context} before. ')
 
         return self.client.me
 
     @property
     def db_user(self) -> UserModel:
-        return crud.get_or_create(self.db_session, UserModel, dict(id=self.tg_user.id), echo=True)
+        if not self.db_session:
+            raise RuntimeError(f'None {Session}. Assignee it to {self.db_session=} before. ')
 
-    async def _handler(self, client: Client, message: Message):
+        user = self.db_session.query(UserModel).filter_by(id=self.tg_user.id).one_or_none()
+        if not user:
+            raise RuntimeError(f'None {UserModel} instance. Start chat with {self.target=} before. ')
+        return user
+
+    async def _client_message_registry(self, client: Client, message: Message):
         logger.info('[add message to test collection]')
-        self._messages.append(message)
+        self._collected_messages.append(message)
+
+    async def _app_exception_registry(self, update: object, context: CustomContext):
+        self._collected_exceptions.append(context.error)
 
 
+# FIXME make those fixture to be called before any other
 @pytest.fixture(autouse=True, scope='function')
 def aaa_new_line_function():
     """

@@ -1,8 +1,8 @@
 import pytest
+from sqlalchemy.orm import Session
+from telegram.ext import Application
 
 from tests.conftest import ClientIntegration, TestConfig
-
-TESTUSERS = ('vybornyy',)  # , 'simusik', 'barticheg'
 
 # TODO: move to config!
 #
@@ -28,11 +28,14 @@ TESTUSERS = ('vybornyy',)  # , 'simusik', 'barticheg'
 
 
 @pytest.fixture(scope='session')
-async def integration(config: TestConfig):
-    return ClientIntegration(config=config)
+async def vybornyy_context(config: TestConfig, application: Application):
+    vybornyy = ClientIntegration(app=application, config=config)
+    async with vybornyy.context('vybornyy'):
+        yield vybornyy
 
 
-@pytest.fixture(scope='session')
-async def vybornyy(integration: ClientIntegration):
-    async with integration.context('vybornyy'):
-        yield integration
+@pytest.fixture
+async def vybornyy(vybornyy_context: ClientIntegration, session: Session):
+    vybornyy_context.db_session = session
+    yield vybornyy_context
+    vybornyy_context.db_session = None

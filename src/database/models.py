@@ -6,6 +6,8 @@ from sqlalchemy.orm import Mapped, relationship
 
 from database.base import BaseModel
 
+# TODO migrate to sqlalchemy 2.0 with DeclarativeAsDataclasses
+
 
 class UserModel(BaseModel):
     history: list[MessageModel] = relationship('database.models.MessageModel', backref='user')
