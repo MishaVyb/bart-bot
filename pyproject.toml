@@ -1,9 +1,32 @@
 [tool.mypy]
+exclude = [
+    'venv',
+    '.*tmp.*',
+    '.*untitled.*',
+]
+plugins = [
+  'pydantic.mypy'
+]
+
 ignore_missing_imports = true
+follow_imports = 'silent'
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+no_implicit_reexport = true
 no_implicit_optional = false
+#disallow_untyped_defs = true  # for strict mypy
+
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
 
 [tool.black]
-line-length = 120                  # max line length
+line-length = 120                   # max line length
 skip-string-normalization = 1       # disable converting single quote to double
 # by default black exclude all .gitignore files. here is regex pattern to extend this list
 # NOTE! list of files name is not supported, only regex patterns
@@ -11,7 +34,7 @@ skip-string-normalization = 1       # disable converting single quote to double
 # extend-exclude = 'alembic/|migrations/'
 
 [tool.isort]
-skip_glob = '*tmp*'            # ignoring tmp files
+skip_glob = '*tmp*'
 profile = 'black'
 
 
@@ -20,15 +43,9 @@ exclude = ['venv', 'alembic', '*tmp*'] # WARNING! also pass this list of files t
 
 
 [tool.flake8]
-max-line-length = 120 # PEP8: 79 | black: 88 | google: 120
+max-line-length = 120
 extend-ignore = [
-    # 'E731',     # assignment lambda to variable - okay
-    # 'E501',     # line too long
-    #             # (Black is used to forcing length to N symbols, but when it can't be done - we leave it as is)
-    # 'E203',     # whitespaces before slice :  seq[1 :2]
-    # 'N805',     # first argument of a method should be named 'self' (to handle pydantic validator methods)
-    # 'N815',     # because of contryCode field
-    # 'R504',     # unnecessary variable assignment before return statement
+    'E731',     # assignment lambda to variable - okay
 ]
 per-file-ignores = [
     '*/__init__.py:F401',  # imported but unused

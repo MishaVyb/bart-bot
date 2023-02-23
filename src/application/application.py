@@ -1,7 +1,8 @@
+import logging
 from types import NoneType
 
 import sqlalchemy
-from telegram.ext import ApplicationHandlerStop, ContextTypes
+from telegram.ext import ContextTypes
 
 from application.base import LayeredApplication
 from application.context import CustomContext
@@ -12,6 +13,8 @@ from application.middlewares import (
     user_middleware,
 )
 from configurations import CONFIG, logger
+
+logger = logging.getLogger(__name__)
 
 
 async def post_init(app: LayeredApplication):

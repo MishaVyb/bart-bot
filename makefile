@@ -20,6 +20,10 @@ install:
 	@read
 	@pip3 install --upgrade pip;
 
+	# prod tools:
+	pip install python-telegram-bot pydantic pydantic[dotenv]
+	pip install sqlalchemy[asyncio] asyncpg alembic
+
 	# format tools:
 	pip install black mypy isort
 	pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort Flake8-pyproject
@@ -27,11 +31,6 @@ install:
 	pip install types-PyYAML
 	pip install pre-commit
 	pre-commit install
-
-	# prod tools:
-	pip install python-telegram-bot pydantic pydantic[dotenv]
-	pip install sqlalchemy[asyncio] asyncpg psycopg2-binary alembic
-
 
 format:
 	@autoflake --remove-all-unused-imports -vv --ignore-init-module-imports -r .
@@ -47,7 +46,6 @@ format:
 
 push:
 	pip freeze > requirements.txt
-	cp .github/workflows/github-ci-cd.yml .
 	@git status
 	@echo "All files listed above will be added to commit. Enter commit message to proceed. Ctr-C to abort."
 	@read -p "Commit message: " COMMIT_MESSAGE; git add . ; git commit -m "$$COMMIT_MESSAGE"

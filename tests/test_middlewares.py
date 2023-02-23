@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from configurations import AppConfig
-from database.models import MessageModel, UserModel
+from database.models import UserModel
 from tests.conftest import ClientIntegration
 
 

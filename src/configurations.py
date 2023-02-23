@@ -46,7 +46,7 @@ class AppConfig(BaseSettings):
     db_name: str
 
     def db_uri(self, db: str = None, dialect: str = None, host: str = None, port: int = None, name: str = None):  # type: ignore
-        # TODO: use sqlalchemy.engine.URL
+        # TODO: use sqlalchemy.engine.URL OR pydantic.PostgresDsn.build
 
         db = db or self.db
         dialect = dialect or self.db_dialect
@@ -72,14 +72,15 @@ CONFIG = AppConfig()
 # TODO:
 
 # option [1]
-# logging.basicConfig(format='%(levelname)s [%(filename)s]: %(message)s', level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(levelname)s [%(filename)s]: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # # option [2]
-logger = logging.getLogger(__name__)
-logger.setLevel(CONFIG.log_level)
+# aa = __name__
+# logger = logging.getLogger(__name__)
+# logger.setLevel(CONFIG.log_level)
 
-handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
-if not logger.handlers:
-    logger.addHandler(handler)
+# handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
+# handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
+# if not logger.handlers:
+#     logger.addHandler(handler)
