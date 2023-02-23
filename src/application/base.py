@@ -2,7 +2,15 @@ from contextlib import AsyncContextDecorator
 from typing import Callable, TypeAlias
 
 from telegram import Update
-from telegram.ext import Application, BaseHandler, CommandHandler, ExtBot, JobQueue
+from telegram.ext import (
+    Application,
+    BaseHandler,
+    CommandHandler,
+    ExtBot,
+    JobQueue,
+    MessageHandler,
+)
+from telegram.ext import filters as telegram_filters
 
 from application.context import CustomContext
 from configurations import logger
@@ -13,17 +21,33 @@ class APPHandlers(list[BaseHandler]):
     Handlers regestry.
     """
 
+    # TODO: type annotations
     def command(self, command=None, filters=None, block=True):
-        def decorator(wrapped: Callable):
+        def callback(wrapped: Callable):
             self.append(
-                CommandHandler(callback=wrapped, command=command or wrapped.__name__, filters=filters, block=block)
+                CommandHandler(
+                    callback=wrapped,
+                    command=command or wrapped.__name__,
+                    filters=filters,
+                    block=block,
+                )
             )
+            return wrapped
 
-            # NOTE
-            # why returning the same function
-            return Callable
+        return callback
 
-        return decorator
+    def message(self, filters=None, block=True):
+        def callback(wrapped: Callable):
+            self.append(
+                MessageHandler(
+                    callback=wrapped,
+                    filters=filters or getattr(telegram_filters, wrapped.__name__.upper()),
+                    block=block,
+                )
+            )
+            return wrapped
+
+        return callback
 
     def append(self, handler: BaseHandler) -> None:
         logger.debug(f'Add <{handler.callback.__name__}> handler to registry. ')
@@ -31,6 +55,7 @@ class APPHandlers(list[BaseHandler]):
 
 
 MiddlewaresType: TypeAlias = list[Callable[[Update, CustomContext], AsyncContextDecorator]]
+
 
 # TODO rename to ???
 class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, None, JobQueue]):

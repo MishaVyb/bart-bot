@@ -1,4 +1,3 @@
-import logging
 from types import NoneType
 
 import sqlalchemy
@@ -13,8 +12,6 @@ from application.middlewares import (
     user_middleware,
 )
 from configurations import CONFIG, logger
-
-logger = logging.getLogger(__name__)
 
 
 async def post_init(app: LayeredApplication):

@@ -1,6 +1,6 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
+
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, database_exists, drop_database
 
@@ -11,35 +11,40 @@ from tests.conftest import logger
 
 @pytest.fixture(scope='session')
 def engine(config: AppConfig):
-    return create_engine(config.db_uri(dialect='psycopg2'), echo=config.sql_logs)
+    return create_async_engine(config.db_uri(), echo=config.sql_logs, echo_pool=config.sql_logs)
 
 
 @pytest.fixture(autouse=True, scope='session')
-def setup_database(engine: Engine):
+def setup_database(engine: AsyncEngine):
     logger.debug(f'Set up test database: {engine.url=}. ')
 
-    if database_exists(engine.url):
+    url = engine.url.set(drivername='postgresql+psycopg2')
+    if database_exists(url):
         logger.warning('Running tests against existing database is deprecated. All data will be gone. ')
-        drop_database(engine.url)
+        drop_database(url)
 
-    create_database(engine.url)
+    create_database(url)
 
     yield
     logger.debug(f'Tear down test database: {engine.pool.status()}. ')
 
-    if database_exists(engine.url):
-        drop_database(engine.url)
+    if database_exists(url):
+        drop_database(url)
 
 
 @pytest.fixture(autouse=True, scope='function')
-def setup_tables(engine: Engine):
-    BaseModel.metadata.create_all(engine)
+async def setup_tables(engine: AsyncEngine):
+    async with engine.begin() as connection:
+        await connection.run_sync(BaseModel.metadata.create_all)
+
     yield
-    engine.dispose()  # ???
-    BaseModel.metadata.drop_all(engine)
+
+    await engine.dispose()  # ???
+    async with engine.begin() as connection:
+        await connection.run_sync(BaseModel.metadata.drop_all)
 
 
 @pytest.fixture
-def session(engine: Engine):
-    with Session(engine) as session, session.begin():
+async def session(engine: AsyncEngine):
+    async with AsyncSession(engine) as session, session.begin():
         yield session

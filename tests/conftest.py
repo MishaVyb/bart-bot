@@ -1,4 +1,3 @@
-import asyncio
 import builtins
 import random
 import string
@@ -10,7 +9,9 @@ from anyio import sleep
 from pyrogram import Client, filters
 from pyrogram.errors.exceptions import bad_request_400
 from pyrogram.types import Message, User
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from telegram.ext import Application
 
 from application.context import CustomContext
@@ -24,12 +25,20 @@ pytest_plugins = [
     'tests.fixtures.fixture_db',
 ]
 
+__all__ = ['logger']
 
-@pytest.fixture(scope="session")
-def event_loop():
-    # by default pytest-asyncio define 'event_loop' as function scoped fixture
-    # but we need it with session scope
-    return asyncio.get_event_loop()
+
+# UNUSED
+# @pytest.fixture(scope="session")
+# def event_loop():
+#     # by default pytest-asyncio define 'event_loop' as function scoped fixture
+#     # but we need it with session scope
+#     return asyncio.get_event_loop()
+
+
+@pytest.fixture(scope='session')
+def anyio_backend():
+    return 'asyncio'
 
 
 class TestConfig(AppConfig):
@@ -65,7 +74,7 @@ class ClientIntegration:
         def fullname(self):
             return self.first_name, self.last_name
 
-    def __init__(self, app: Application, config: TestConfig, db_session: Session | None = None) -> None:
+    def __init__(self, app: Application, config: TestConfig, db_session: AsyncSession | None = None) -> None:
         self.app = app
         self.db_session = db_session
         self.config = config
@@ -189,14 +198,16 @@ class ClientIntegration:
         return self.client.me
 
     @property
-    def db_user(self) -> UserModel:
+    async def db_user(self) -> UserModel:
         if not self.db_session:
-            raise RuntimeError(f'None {Session}. Assignee it to {self.db_session=} before. ')
+            raise RuntimeError(f'None {AsyncSession}. Assignee it to {self.db_session=} before. ')
 
-        user = self.db_session.query(UserModel).filter_by(id=self.tg_user.id).one_or_none()
-        if not user:
-            raise RuntimeError(f'None {UserModel} instance. Start chat with {self.target=} before. ')
-        return user
+        user_query = (
+            select(UserModel)
+            .filter(UserModel.id == self.tg_user.id)
+            .options(selectinload(UserModel.history))  # fmt: off
+        )
+        return (await self.db_session.execute(user_query)).scalar_one()
 
     async def _client_message_registry(self, client: Client, message: Message):
         logger.info('[add message to test collection]')

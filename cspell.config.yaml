@@ -29,6 +29,7 @@ words:
   - pydantic
   - pyrogram
   - pytest
+  - selectinload
   - simusik
   - sqlalchemy
   - testdb

@@ -21,7 +21,6 @@ Only `yield None` is allowed, because:
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import Session
 from telegram import Update
 
 from application.context import CustomContext
@@ -61,18 +60,26 @@ async def session_middleware(update: Update, context: CustomContext):
 
 @asynccontextmanager
 async def user_middleware(update: Update, context: CustomContext):
-    # ???
-    # why sync (not async) here
-    def _sync(session: Session):
-        user = crud.get_or_create(session, UserModel, dict(id=update.effective_user.id), echo=True)  # type: ignore
-        ...
-        #
-        # TODO: merge user from DB with user from API
+    context.db_user = await crud.get_or_create(
+        context.session,
+        UserModel,
+        id=update.effective_user.id,
+        extra_kwargs={'storage': update.effective_user.id},  # set default storage
+    )
 
-    await context.session.run_sync(_sync)
+    # ???
+    # if not context.db_user.storage:
+    #     context.db_user.storage = context.db_user.id
+
     yield
     #
-    # TODO: handle user updates... or it handled automatically?
+    # TODO: save orm user updates... or it handled by alchemy automatically?
+
+
+@asynccontextmanager
+async def logging_middleware(update: Update, context: CustomContext):
+    # TODO
+    yield
 
 
 @asynccontextmanager

@@ -7,6 +7,7 @@ repos:
       - id: autoflake
         exclude: alembic/
 
+  # FIXME
   # - repo: https://github.com/pycqa/isort
   #   rev: 5.10.1
   #   hooks:

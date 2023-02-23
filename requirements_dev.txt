@@ -1,0 +1,28 @@
+-r requirements.txt
+
+# test tools:
+pytest
+pyrogram
+anyio
+sqlalchemy_utils
+psycopg2-binary     # for sqlalchemy_utils
+
+# linters:
+mypy
+isort
+flake8
+pep8-naming
+flake8-broken-line
+flake8-return
+flake8-isort
+Flake8-pyproject
+
+# formaters
+black
+autoflake==1.7.8
+pre-commit
+
+# types
+types-PyYAML
+
+

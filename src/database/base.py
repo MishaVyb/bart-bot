@@ -1,30 +1,27 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, sql
+from sqlalchemy import BIGINT, JSON, BigInteger, Column, DateTime, sql
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, DeclarativeBase, MappedAsDataclass, mapped_column
 
 from utils import camel_to_snake
 
 
-@as_declarative()
-class BaseModel:
-    __abstract__ = True
-    __table_args__ = {'extend_existing': True}  # ???
+class BaseModel(MappedAsDataclass, DeclarativeBase, kw_only=True):
+    type_annotation_map = {int: BIGINT, dict: JSON}
+    # __abstract__ = True
+    # __table_args__ = {'extend_existing': True}  # ???
 
-    id: Mapped[int] = Column(
-        BigInteger,
-        nullable=False,
-        unique=True,
+    id: Mapped[int] = mapped_column(
+        # nullable=False,
+        # unique=True,
         primary_key=True,
-        autoincrement=True,
+        # autoincrement=True,
+        default=None,
     )
-    created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=sql.func.now())
-    updated_at: Mapped[datetime] = Column(DateTime(timezone=True), onupdate=sql.func.now())
+    created_at: Mapped[datetime] = mapped_column(server_default=sql.func.now(), init=False)
+    updated_at: Mapped[datetime] = mapped_column(server_default=sql.func.now(), onupdate=sql.func.now(), init=False)
 
     @declared_attr
     def __tablename__(cls):
-        return camel_to_snake(cls.__name__).replace('_model', '') + 's'
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__}({self.id=})>'
+        return camel_to_snake(cls.__name__).replace('_model', '')

@@ -72,15 +72,15 @@ CONFIG = AppConfig()
 # TODO:
 
 # option [1]
-logging.basicConfig(format='%(levelname)s [%(filename)s]: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(format='%(levelname)s [%(filename)s]: %(message)s', level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 # # option [2]
 # aa = __name__
-# logger = logging.getLogger(__name__)
-# logger.setLevel(CONFIG.log_level)
+logger = logging.getLogger(__name__)
+logger.setLevel(CONFIG.log_level)
 
-# handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
-# handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
-# if not logger.handlers:
-#     logger.addHandler(handler)
+handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
+if not logger.handlers:
+    logger.addHandler(handler)
