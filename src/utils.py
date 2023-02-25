@@ -4,15 +4,9 @@ import re
 from typing import Type, TypeVar
 
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from telegram._message import Message
-from telegram._user import User
 
-from accessories import MediaType
 from configurations import logger
-
-from exceptions import NoPhotosException
 
 _ModelType = TypeVar('_ModelType')
 

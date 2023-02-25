@@ -2,7 +2,7 @@ import pytest
 
 from application.application import NoneContextType, post_init
 from application.base import LayeredApplication
-from configurations import AppConfig, logger
+from configurations import AppConfig
 from tests.conftest import logger
 
 

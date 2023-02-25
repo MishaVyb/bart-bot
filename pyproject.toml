@@ -48,12 +48,16 @@ profile = 'black'
 
 [tool.autoflake]
 exclude = ['venv', 'alembic', '*tmp*'] # WARNING! also pass this list of files to pre-commit-config.
+in-place = true
+remove-all-unused-imports = true
+ignore-init-module-imports = true
 
 
 [tool.flake8]
 max-line-length = 120
 extend-ignore = [
     'E731',     # assignment lambda to variable - okay
+    'R504',     # unnecessary variable assignment before return statement.
 ]
 per-file-ignores = [
     '*/__init__.py:F401',  # imported but unused
@@ -63,4 +67,9 @@ exclude = [
     'alembic/*',
     '*tmp*',
     '*untitled*',
+]
+classmethod-decorators = [
+    'classmethod',
+    'validator',
+    'declared_attr',
 ]

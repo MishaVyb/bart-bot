@@ -46,13 +46,11 @@ import inspect
 from contextlib import asynccontextmanager
 from typing import Callable
 
-from pydantic import validate_arguments
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from telegram import Update
 
 from application.context import CustomContext
 from configurations import CONFIG, logger
-from database import crud
 from database.models import UserModel
 from service import AppService
 from utils import get_func_name, get_or_create
@@ -77,7 +75,7 @@ async def session_middleware(update: Update, context: CustomContext):
         try:
             delattr(context, 'session')
         except Exception:
-            logger.error(f'Delleting session attr failed. ')  # FIXME
+            logger.error('Delleting session attr failed. ')  # FIXME
 
 
 @asynccontextmanager
@@ -121,7 +119,7 @@ async def history_middleware(update: Update, context: CustomContext):
     yield
 
 
-class args_middleware:
+class args_middleware:  # noqa: N801
     def __init__(self, update: Update, context: CustomContext) -> None:
         pass
 

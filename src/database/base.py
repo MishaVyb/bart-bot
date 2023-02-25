@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Literal
 
-from sqlalchemy import BIGINT, JSON, VARCHAR, BigInteger, Column, DateTime, sql
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
+from sqlalchemy import BIGINT, JSON, VARCHAR, sql
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
-from accessories import MediaType
 
+from accessories import MediaType
 from utils import camel_to_snake
 
 

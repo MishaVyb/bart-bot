@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import pytest
 from anyio import sleep
-from pyrogram import Client, filters
+from pyrogram import Client, filters  # type: ignore [attr-defined]
 from pyrogram.errors.exceptions import bad_request_400
 from pyrogram.types import Message, User
 from sqlalchemy import select
@@ -66,8 +66,8 @@ class TestConfig(AppConfig):
     def get_confirmation_code(self):
         return str(self._dc_number) * 5
 
-    def get_username(cls, tag: str):
-        postfix = ''.join(random.choice(string.ascii_lowercase) for _ in range(cls.username_postfix_len))
+    def get_username(self, tag: str):
+        postfix = ''.join(random.choice(string.ascii_lowercase) for _ in range(self.username_postfix_len))
         return tag + postfix
 
 
@@ -136,7 +136,7 @@ class ClientIntegration:
 
             # update local User properties (it has been initialized at client.start() call above)
             if self.config.strict_mode:
-                logger.info(f'Strict mode is on. Set user credentials and username. It takes a while. ')
+                logger.info('Strict mode is on. Set user credentials and username. It takes a while. ')
 
                 self.tg_user.first_name, self.tg_user.last_name = self.credits.fullname
                 self.tg_user.username = self.credits.username

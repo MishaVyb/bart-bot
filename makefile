@@ -23,7 +23,7 @@ install:
 	pip install requirements_dev.txt
 	pre-commit install
 
-format:
+ci:
 	@autoflake --remove-all-unused-imports -vv --ignore-init-module-imports -r .
 	@echo "make format is calling for autoflake, which  will remove all unused imports listed above. Are you sure?"
 	@echo "Enter to proceed. Ctr-C to abort."

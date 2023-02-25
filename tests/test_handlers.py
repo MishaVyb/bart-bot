@@ -1,5 +1,5 @@
 import pytest
-from pyrogram.types import InputMedia, InputMediaPhoto, InputMediaVideo
+from pyrogram.types import InputMediaPhoto
 
 from configurations import AppConfig
 from content import CONTENT

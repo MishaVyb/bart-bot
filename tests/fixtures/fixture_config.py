@@ -1,8 +1,8 @@
 import pytest
+from pytest import FixtureRequest
 
 from configurations import CONFIG, AppConfig
 from tests.conftest import TestConfig, logger
-from pytest import FixtureRequest
 
 
 @pytest.fixture(scope='session')

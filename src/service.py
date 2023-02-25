@@ -4,15 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram._message import Message
-from telegram._user import User
 
 from accessories import MediaType
 from configurations import logger
-from database import BaseModel, MessageModel
+from database import MessageModel
 from database.models import UserModel
 from exceptions import NoPhotosException
-
-# TODO rename to class BartService and to file service.py
 
 
 @dataclass
@@ -24,14 +21,14 @@ class AppService:
     """Message from telegram update. """
 
     def append_history(self, message: Message):
+        media_id = None
+        media_type = None
+
         if message.photo:
             media_id = message.photo[-1].file_id
             media_type = MediaType.photo.value
         elif message.video:
             raise NotImplementedError
-        else:
-            media_id = None
-            media_type = None
 
         instance = MessageModel(
             user_id=self.user.id,

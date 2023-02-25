@@ -1,12 +1,9 @@
-from telegram import ReplyKeyboardMarkup, Update, User, Message
+from telegram import Message, ReplyKeyboardMarkup
 from telegram.ext import filters
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from application.base import APPHandlers
-from application.context import CustomContext
 from configurations import logger
 from content import CONTENT
-from database import crud
 from database.models import UserModel
 from exceptions import NoPhotosException
 from service import AppService

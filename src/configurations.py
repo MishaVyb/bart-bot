@@ -3,7 +3,7 @@ from pprint import pformat
 from typing import Literal
 
 from pydantic import BaseSettings, SecretStr
-from telegram import __version__ as TG_VER
+from telegram import __version__ as tg_version
 
 # checking python version before starting app
 try:
@@ -13,10 +13,11 @@ except ImportError:
 
 if __version_info__ < (20, 0, 0, 'alpha', 1):
     raise RuntimeError(
-        f'This example is not compatible with your current PTB version {TG_VER}. To view the '
-        f'{TG_VER} version of this example, '
-        f'visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html'
+        f'This example is not compatible with your current PTB version {tg_version}. To view the '
+        f'{tg_version} version of this example, '
+        f'visit https://docs.python-telegram-bot.org/en/v{tg_version}/examples.html'
     )
+
 
 # secrets and app settings
 class AppConfig(BaseSettings):
@@ -45,7 +46,7 @@ class AppConfig(BaseSettings):
     db_port: int = 5432
     db_name: str
 
-    def db_uri(self, db: str = None, dialect: str = None, host: str = None, port: int = None, name: str = None):  # type: ignore
+    def db_uri(self, db: str = None, dialect: str = None, host: str = None, port: int = None, name: str = None):
         # TODO: use sqlalchemy.engine.URL OR pydantic.PostgresDsn.build
 
         db = db or self.db

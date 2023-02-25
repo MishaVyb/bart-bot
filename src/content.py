@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import random
 
 import yaml
@@ -42,17 +43,17 @@ class BotContent(BaseModel):
         # TODO frozen
 
 
-class _send_photo(BaseModel):
+class SendPhotoReplyes(BaseModel):
     any: Replyes
     all: Replyes
 
 
-class _receive_photo(BaseModel):
+class ReceivePhotoReplyes(BaseModel):
     initial: Replyes
     basic: Replyes
 
 
-class _exceptions(BaseModel):
+class ExceptionMessages(BaseModel):
     default: str
     repeated_photo: str
     no_photos: str
@@ -62,11 +63,12 @@ class BotMessages(BaseModel):
     start: str
     regular: Replyes
     """Replyes for any (not specific) message."""
+
     feedme: Replyes
     receive_food: Replyes
-    send_photo: _send_photo
-    receive_photo: _receive_photo
-    exceptions: _exceptions  # TODO move to BotContent layer
+    send_photo: SendPhotoReplyes
+    receive_photo: ReceivePhotoReplyes
+    exceptions: ExceptionMessages  # TODO move to BotContent layer
 
 
 BotContent.update_forward_refs()

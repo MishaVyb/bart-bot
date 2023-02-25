@@ -5,8 +5,8 @@ from typing import ClassVar
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from telegram import User
-from accessories import MediaType
 
+from accessories import MediaType
 from database.base import BaseModel
 
 

@@ -10,14 +10,14 @@ from telegram import Update
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from application import app
-from configurations import CONFIG, logger
+from application import app  # noqa: E402
+from configurations import CONFIG, logger  # noqa: E402
 
-_RuntimeContext: TypeAlias = object  # special yandex.cloud functions object
+_RuntimeContext: TypeAlias = object
+"""Special yandex.cloud functions object. """
 
 
 async def gateway(event: dict, context: _RuntimeContext):
-
     # NOTE
     # depending on Yandex.Functions settings, request body could be not parsed yet
     data = event['body']
@@ -30,7 +30,7 @@ async def gateway(event: dict, context: _RuntimeContext):
             await app.initialize()
             await app.start()
         await app.process_update(Update.de_json(data=data, bot=app.bot))
-    except:
+    except:  # noqa: E722
         # TODO
         # special handling
         raise
