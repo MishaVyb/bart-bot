@@ -1,9 +1,25 @@
 from __future__ import annotations
+import random
 
 import yaml
 from pydantic import BaseModel
+from pydantic.validators import list_validator
 
 from configurations import CONFIG
+
+
+class Replyes(list[str]):
+    def get(self, *, random_choice: bool = True):
+        return random.choice(self)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield list_validator
+        yield cls.list_tranformation
+
+    @classmethod
+    def list_tranformation(cls, v: list):
+        return cls(v)
 
 
 class BotContent(BaseModel):
@@ -27,13 +43,13 @@ class BotContent(BaseModel):
 
 
 class _send_photo(BaseModel):
-    any: str
-    all: str
+    any: Replyes
+    all: Replyes
 
 
 class _receive_photo(BaseModel):
-    initial: list[str]
-    basic: list[str]
+    initial: Replyes
+    basic: Replyes
 
 
 class _exceptions(BaseModel):
@@ -44,9 +60,10 @@ class _exceptions(BaseModel):
 
 class BotMessages(BaseModel):
     start: str
-    regular: list[str]
-    feedme: list[str]
-    receive_food: list[str]
+    regular: Replyes
+    """Replyes for any (not specific) message."""
+    feedme: Replyes
+    receive_food: Replyes
     send_photo: _send_photo
     receive_photo: _receive_photo
     exceptions: _exceptions  # TODO move to BotContent layer

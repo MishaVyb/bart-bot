@@ -17,6 +17,7 @@ words:
   - dotenv
   - feedme
   - grnd
+  - isnot
   - isort
   - Misha
   - mypy
@@ -33,6 +34,7 @@ words:
   - simusik
   - sqlalchemy
   - testdb
+  - tgcrypto
   - Unpickler
   - venv
   - vybornyy

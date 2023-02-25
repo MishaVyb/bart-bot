@@ -3,6 +3,7 @@
 # test tools:
 pytest
 pyrogram
+tgcrypto            # for fast pyrogram performance
 anyio
 sqlalchemy_utils
 psycopg2-binary     # for sqlalchemy_utils

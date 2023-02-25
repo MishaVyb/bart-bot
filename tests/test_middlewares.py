@@ -16,16 +16,21 @@ async def test_user_middleware(vybornyy: ClientIntegration, config: AppConfig, s
     with pytest.raises(NoResultFound):
         await vybornyy.db_user
 
+    # test action:
     async with vybornyy.collect(amount=1):
         await vybornyy.client.send_message(config.botname, '/start')
 
-    # user appears at DB:
+    # user appears at DB with tg user id:
     assert await vybornyy.db_user
+    assert (await vybornyy.db_user).id == vybornyy.tg_user.id
+
+    # user has default storage (his id):
+    assert (await vybornyy.db_user).storage == vybornyy.tg_user.id
 
 
 async def test_history_middleware(vybornyy: ClientIntegration, config: AppConfig):
     text = f'hey from {vybornyy.tg_user.username}'
-    async with vybornyy.collect(timeout=0):
+    async with vybornyy.collect():
         message = await vybornyy.client.send_message(config.botname, '/start')
         message = await vybornyy.client.send_message(config.botname, text)
 

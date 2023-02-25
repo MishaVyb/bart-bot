@@ -1,41 +1,26 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from accessories import MediaType
 
 from database.base import BaseModel
 
 
 class UserModel(BaseModel):
     storage: Mapped[int]
-    history: Mapped[list[MessageModel]] = relationship(backref='user', default_factory=list)
-
-
-# class UserPropertyMixin:  # TODO declarative mixin and rename to UserRelationMixin
-#     """
-#     Shortcut for having:
-
-#     >>> user_id: int = Column(..)   # foreign key
-#     >>> user: UserModel             # annotation for UserModel's relationship backref
-#     """
-
-#     __abstract__ = True
-
-#     user: Mapped[UserModel]
-
-#     @declared_attr
-#     def user_id(self) -> Mapped[int]:
-#         return Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    history: Mapped[list[MessageModel]] = relationship(backref='user', default_factory=list, repr=False)
 
 
 class MessageModel(BaseModel):
-    """Raw"""
-
-    # tg_id: Mapped[int] = Column(nullable=False, unique=False)
-    # """
-    # Telegram defined id. It counts every message from user and bot for each chat separately from others.
-    # Therefore `unique=False`.
-    # """
-
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
-    raw: Mapped[dict] = mapped_column()
+    user: ClassVar[UserModel]  # ORM relationship property from backref # ???
+
+    message_id: Mapped[int]  # telegram has NOT uniq message ids for different chats, so it could not by used as PK
+    media_id: Mapped[str | None] = mapped_column(repr=False)
+    media_type: Mapped[MediaType | None]
+    media_group_id: Mapped[str | None]
+
+    raw: Mapped[dict] = mapped_column(repr=False)

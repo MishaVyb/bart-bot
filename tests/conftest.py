@@ -1,4 +1,5 @@
 import builtins
+import logging
 import random
 import string
 from contextlib import asynccontextmanager, contextmanager
@@ -15,17 +16,19 @@ from sqlalchemy.orm import selectinload
 from telegram.ext import Application
 
 from application.context import CustomContext
-from configurations import AppConfig, logger
+from configurations import AppConfig
 from database.models import UserModel
+
+logger = logging.getLogger(__name__)
+logger.setLevel('WARNING')
 
 pytest_plugins = [
     'tests.fixtures.fixture_application',
     'tests.fixtures.fixture_clients',
     'tests.fixtures.fixture_config',
     'tests.fixtures.fixture_db',
+    'tests.fixtures.fixture_images',
 ]
-
-__all__ = ['logger']
 
 
 # UNUSED
@@ -81,7 +84,7 @@ class ClientIntegration:
         self.target = config.botname  # TODO: create telegram bot from @BotFather dynamically
         self.timeout = config.integration_timeout_sec
 
-        self._collected_messages: list[Message] = []
+        self._collected_replyes: list[Message] = []
         self._collected_exceptions: list[Exception] = []
 
     def __str__(self) -> str:
@@ -153,18 +156,21 @@ class ClientIntegration:
         """
         Context manager for Telegram Bot application test integration.
         """
-        self._collected_messages.clear()
+        timeout = timeout if timeout is not None else self.timeout
+        self._collected_replyes.clear()
         self._collected_exceptions.clear()
 
         try:
-            yield self._collected_messages
+            yield self._collected_replyes
         finally:
-            await sleep(timeout or self.timeout)  # FIXME stupid sleep statement, handle coroutine waitings
+            logger.info(f'Waiting for replyes ({timeout} sec). ' if timeout else 'No waiting for reply. ')
+            await sleep(timeout)  # FIXME stupid sleep statement, handle coroutine waitings
+
             if strict:
                 assert not self._collected_exceptions, 'Integration test failed. Unhandled app exception received. '
             if amount is not None:
                 assert (
-                    len(self._collected_messages) == amount
+                    len(self._collected_replyes) == amount
                 ), 'Integration test failed. Received unexpected messages amount. '
 
     @contextmanager
@@ -211,7 +217,7 @@ class ClientIntegration:
 
     async def _client_message_registry(self, client: Client, message: Message):
         logger.info('[add message to test collection]')
-        self._collected_messages.append(message)
+        self._collected_replyes.append(message)
 
     async def _app_exception_registry(self, update: object, context: CustomContext):
         self._collected_exceptions.append(context.error)

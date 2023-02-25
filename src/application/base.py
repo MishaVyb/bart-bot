@@ -78,9 +78,12 @@ class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, No
 
     def _handler_factory(self, handler: Callable):
         async def handler_caller(update, context):
-            wrapped = self._wrap_into_middlewares(handler, update, context)
+            logger.info(f'[Handler: <{handler.__name__}>] Handling update. ')
 
+            wrapped = self._wrap_into_middlewares(handler, update, context)
             await wrapped(update, context)  # unwrap (call for) one layer after another
+
+            logger.info(f'[Handler: <{handler.__name__}>] Done. ')
 
         return handler_caller
 

@@ -33,20 +33,15 @@ from database.models import UserModel
 async def session_context():
     # ??? define engine in scope for every update or globally for all app only once in beginnings
     #
-    logger.debug('session context in')
-
     engine = create_async_engine(CONFIG.db_uri(), echo=CONFIG.sql_logs)
     async with AsyncSession(engine) as session:
         async with session.begin():
             yield session
     await engine.dispose()
 
-    logger.debug('session context out')
-
 
 @asynccontextmanager
 async def session_middleware(update: Update, context: CustomContext):
-    logger.debug('session middleware in')
     async with session_context() as session:
         setattr(context, 'session', session)
         yield
@@ -54,8 +49,6 @@ async def session_middleware(update: Update, context: CustomContext):
             delattr(context, 'session')
         except Exception:
             logger.error(f'Delleting session attr failed. ')  # FIXME
-
-    logger.debug('session middleware out')
 
 
 @asynccontextmanager
@@ -66,10 +59,6 @@ async def user_middleware(update: Update, context: CustomContext):
         id=update.effective_user.id,
         extra_kwargs={'storage': update.effective_user.id},  # set default storage
     )
-
-    # ???
-    # if not context.db_user.storage:
-    #     context.db_user.storage = context.db_user.id
 
     yield
     #
@@ -85,7 +74,7 @@ async def logging_middleware(update: Update, context: CustomContext):
 @asynccontextmanager
 async def history_middleware(update: Update, context: CustomContext):
     # TODO:
-    # initialize crud in middleware and use in as func argument
+    # initialize crud (Service) in middleware and use in as func argument
     crud.append_history(
         context.session,
         update.effective_user,
