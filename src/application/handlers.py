@@ -9,6 +9,7 @@ from content import CONTENT
 from database import crud
 from database.models import UserModel
 from exceptions import NoPhotosException
+from service import AppService
 from utils import get_func_name
 
 handler = APPHandlers()
@@ -25,17 +26,17 @@ async def start(user: UserModel, message: Message) -> None:
 
 
 @handler.message()
-async def photo(user: UserModel, message: Message, session: AsyncSession) -> None:
-    if (await crud.get_media_count(session, user.storage)) > 1:
+async def photo(message: Message, service: AppService) -> None:
+    if (await service.get_media_count()) > 1:
         await message.reply_text(text=CONTENT.messages.receive_photo.basic.get())
     else:
         await message.reply_text(text=CONTENT.messages.receive_photo.initial.get())
 
 
 @handler.message(filters.Regex(r'|'.join(CONTENT.buttons)))
-async def emoji_food(user: UserModel, message: Message, session: AsyncSession) -> None:
+async def emoji_food(message: Message, service: AppService) -> None:
     try:
-        photo = await crud.get_media_id(session, user.storage)
+        photo = await service.get_media_id()
     except NoPhotosException:
         await message.reply_text(CONTENT.messages.exceptions.no_photos)
     else:

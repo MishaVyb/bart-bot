@@ -54,7 +54,8 @@ from application.context import CustomContext
 from configurations import CONFIG, logger
 from database import crud
 from database.models import UserModel
-from utils import get_func_name
+from service import AppService
+from utils import get_func_name, get_or_create
 
 
 @asynccontextmanager
@@ -86,7 +87,7 @@ async def user_middleware(update: Update, context: CustomContext):
     if not update.effective_user:
         raise ValueError
 
-    context.user = await crud.get_or_create(
+    context.user = await get_or_create(
         context.session,
         UserModel,
         id=update.effective_user.id,
@@ -109,14 +110,14 @@ async def logging_middleware(update: Update, context: CustomContext):
 
 
 @asynccontextmanager
+async def service_middleware(update: Update, context: CustomContext):
+    context.service = AppService(context.session, context.user, update.message)
+    yield
+
+
+@asynccontextmanager
 async def history_middleware(update: Update, context: CustomContext):
-    # TODO:
-    # initialize crud (Service) in middleware and use in as func argument
-    crud.append_history(
-        context.session,
-        update.effective_user,
-        update.message,
-    )
+    context.service.append_history(update.message)
     yield
 
 

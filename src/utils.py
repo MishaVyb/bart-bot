@@ -1,8 +1,45 @@
 import functools
 import inspect
 import re
+from typing import Type, TypeVar
 
+from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession
+from telegram._message import Message
+from telegram._user import User
+
+from accessories import MediaType
 from configurations import logger
+
+from exceptions import NoPhotosException
+
+_ModelType = TypeVar('_ModelType')
+
+
+async def get_or_create(
+    session: AsyncSession,
+    model: Type[_ModelType],
+    extra_kwargs: dict = {},
+    **instance_kwargs,
+) -> _ModelType:
+    """
+    Get or create model instance if it does not exist.
+
+    `instance_kwargs`: taking for quering DB
+    `extra_kwargs`: taking for instance creation united with `instance_kwargs`
+    """
+
+    result = await session.execute(select(model).filter_by(**instance_kwargs))
+    if instance := result.scalar():
+        return instance
+
+    instance_kwargs |= extra_kwargs
+    instance = model(**instance_kwargs)
+    session.add(instance)
+
+    logger.info(f'{instance} added to database. ')
+    return instance
 
 
 def camel_to_snake(case: str):

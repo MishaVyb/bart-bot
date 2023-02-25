@@ -9,6 +9,7 @@ from application.handlers import handler
 from application.middlewares import (
     args_middleware,
     history_middleware,
+    service_middleware,
     session_middleware,
     user_middleware,
 )
@@ -21,6 +22,7 @@ async def post_init(app: LayeredApplication):
         [
             session_middleware,
             user_middleware,
+            service_middleware,
             history_middleware,
             args_middleware,
         ]
@@ -29,7 +31,7 @@ async def post_init(app: LayeredApplication):
     app.add_error_handler(error_handler)
 
 
-NoneContextType = ContextTypes(  # in-memory data is deprecated for our app
+NoneContextType = ContextTypes(  # in-memory data is deprecated for this application
     user_data=NoneType,
     chat_data=NoneType,
     bot_data=NoneType,
