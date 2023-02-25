@@ -4,12 +4,15 @@ from typing import ClassVar
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from telegram import User
 from accessories import MediaType
 
 from database.base import BaseModel
 
 
 class UserModel(BaseModel):
+    tg: User
+
     storage: Mapped[int]
     history: Mapped[list[MessageModel]] = relationship(backref='user', default_factory=list, repr=False)
 

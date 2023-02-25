@@ -7,6 +7,7 @@ from application.base import LayeredApplication
 from application.context import CustomContext
 from application.handlers import handler
 from application.middlewares import (
+    args_middleware,
     history_middleware,
     session_middleware,
     user_middleware,
@@ -15,12 +16,13 @@ from configurations import CONFIG, logger
 
 
 async def post_init(app: LayeredApplication):
-    logger.info('post init called')
+    logger.info('App post init. ')
     app.add_middlewares(
         [
             session_middleware,
             user_middleware,
             history_middleware,
+            args_middleware,
         ]
     )
     app.add_handlers(handler)

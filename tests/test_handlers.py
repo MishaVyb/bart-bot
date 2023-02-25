@@ -12,7 +12,7 @@ async def test_start_handler(vybornyy: ClientIntegration, config: AppConfig):
     async with vybornyy.collect(amount=1) as replyes:
         await vybornyy.client.send_message(config.botname, '/start')
 
-    assert replyes[0].text == CONTENT.messages.start.format(username=vybornyy.tg_user.username)
+    assert replyes[0].text == CONTENT.messages.start.format(username=vybornyy.tg_user.username or '')
 
 
 async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):

@@ -2,10 +2,11 @@ import pytest
 
 from configurations import CONFIG, AppConfig
 from tests.conftest import TestConfig, logger
+from pytest import FixtureRequest
 
 
 @pytest.fixture(scope='session')
-def config():
+def config(request: FixtureRequest):
     return TestConfig(_env_file='test.env', botname='TestBartBot')
 
 

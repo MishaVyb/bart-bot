@@ -20,7 +20,12 @@ from configurations import AppConfig
 from database.models import UserModel
 
 logger = logging.getLogger(__name__)
-logger.setLevel('WARNING')
+logger.setLevel('DEBUG')
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
+    logger.addHandler(handler)
+
 
 pytest_plugins = [
     'tests.fixtures.fixture_application',
@@ -47,6 +52,7 @@ def anyio_backend():
 class TestConfig(AppConfig):
     api_id: int
     api_hash: str
+    strict_mode: bool
 
     username_postfix_len: int = 4
     integration_timeout_sec: float = 2.0
@@ -106,7 +112,7 @@ class ClientIntegration:
             api_id=self.config.api_id,
             api_hash=self.config.api_hash,
             test_mode=True,
-            in_memory=True,
+            in_memory=(not self.config.strict_mode),
             phone_number=self.credits.phone,
             phone_code=self.config.get_confirmation_code(),
         )
@@ -114,7 +120,7 @@ class ClientIntegration:
         # set main *any* message handler-callback to collect received messages while acting tests:
         self.client.on_message(filters.chat(self.target))(self._client_message_registry)  # type: ignore
 
-        # set error handler-callback to store any exception received to tell paytest that integration test was failed
+        # set error handler-callback to store any exception received to tell pytest that integration test was failed
         #
         # NOTE
         # if native application error handler rise ApplicationHandlerStop after error handling, this error handler
@@ -129,15 +135,18 @@ class ClientIntegration:
                 await self.client.start()
 
             # update local User properties (it has been initialized at client.start() call above)
-            self.tg_user.first_name, self.tg_user.last_name = self.credits.fullname
-            self.tg_user.username = self.credits.username
+            if self.config.strict_mode:
+                logger.info(f'Strict mode is on. Set user credentials and username. It takes a while. ')
 
-            # update remote User properties
-            try:
-                await self.client.set_username(self.credits.username)
-            except bad_request_400.UsernameNotModified as e:
-                logger.debug(e)
-            await self.client.update_profile(*self.credits.fullname)
+                self.tg_user.first_name, self.tg_user.last_name = self.credits.fullname
+                self.tg_user.username = self.credits.username
+
+                # update remote User properties
+                await self.client.update_profile(*self.credits.fullname)
+                try:
+                    await self.client.set_username(self.credits.username)
+                except bad_request_400.UsernameNotModified as e:
+                    logger.debug(e)
 
             # TODO stop chat with target bot and /start it again
             # TODO kill all other potential account sessions for current phonenumber
@@ -146,7 +155,9 @@ class ClientIntegration:
             yield self
         finally:
             try:
-                await self.client.set_username(None)
+                if self.config.strict_mode:
+                    await self.client.set_username(None)
+
                 await self.client.stop()
             except ConnectionError as e:
                 logger.warning(f'Stopping client fails: {e}')

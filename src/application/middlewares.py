@@ -1,25 +1,52 @@
 """
-Module to describe application's middleware as context manager wrappers. Example:
+Module to describe application's middleware as context manager wrappers.
 
-@asynccontextmanager
-async def session_context(update: Update, context: CustomContext):
-    <setup>
-    try:
-        <add some attrubutes to context>
-        yield
-    finally:
-        <cleanup>
+### Usage:
 
-NOTE:
-Only `yield None` is allowed, because:
-* `@asynccontextmanager` -> return help-object with `AsyncContextDecorator` in bases
-* We use its `__call__` to wrap our handler defined middleware.
-* But __call__ do noghing with yielded value and we cannot use it anyhow.
-* So there is the reason to pass any values directly to update context
+>>> @asynccontextmanager
+>>> async def custom_middleware(update: Update, context: CustomContext):
+>>>     # <setup>
+>>>     try:
+>>>         # <add some attrubutes to context>
+>>>         yield
+>>>     finally:
+>>>         # <cleanup>
+
+* and pass your middlewares to application then:
+
+>>> app.add_middlewares([custom_middleware, ...])
+
+### Yield value:
+
+Only `yield None` is allowed, because `@asynccontextmanager` return help-object with `AsyncContextDecorator` in bases.
+Its `__call__` method is used to wrap handler into defined middleware. But __call__ do nothing with yielded value and
+it cannot be provided anyhow. So there is the reason to pass any values directly to `update` / `context`.
+
+### Extended usage:
+
+>>> class middleware_as_a_class():
+>>>
+>>>     def __init__(self, update: Update, context: CustomContext) -> None:
+>>>         pass
+>>>
+>>>     def __call__(self, handler_callback: Callable):
+>>>         async def inner(update: Update, context: CustomContext):
+>>>             # Usual decorator implementation.
+>>>             # Add some attrubutes to context / update or any other stuff.
+>>>
+>>>             # Call to wrapped function:
+>>>             await handler_callback(**kwargs)
+>>>
+>>>             # Cleanup.
+>>>
+>>>         return inner
 """
 
+import inspect
 from contextlib import asynccontextmanager
+from typing import Callable
 
+from pydantic import validate_arguments
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from telegram import Update
 
@@ -27,6 +54,7 @@ from application.context import CustomContext
 from configurations import CONFIG, logger
 from database import crud
 from database.models import UserModel
+from utils import get_func_name
 
 
 @asynccontextmanager
@@ -53,15 +81,24 @@ async def session_middleware(update: Update, context: CustomContext):
 
 @asynccontextmanager
 async def user_middleware(update: Update, context: CustomContext):
-    context.db_user = await crud.get_or_create(
+    logger.info(f'in: {get_func_name()}')
+
+    if not update.effective_user:
+        raise ValueError
+
+    context.user = await crud.get_or_create(
         context.session,
         UserModel,
         id=update.effective_user.id,
-        extra_kwargs={'storage': update.effective_user.id},  # set default storage
+        extra_kwargs={'storage': update.effective_user.id, 'tg': update.effective_user},  # set default storage
     )
 
+    # in case user already exists at DB, `tg` was ignored and we assign it directly:
+    if not hasattr(context.user, 'tg'):
+        context.tg = update.effective_user
+
     yield
-    #
+    logger.info(f'Out: {get_func_name()}')
     # TODO: save orm user updates... or it handled by alchemy automatically?
 
 
@@ -83,27 +120,36 @@ async def history_middleware(update: Update, context: CustomContext):
     yield
 
 
-########################################################################################
-# TMP EXAMPLES
-########################################################################################
+class args_middleware:
+    def __init__(self, update: Update, context: CustomContext) -> None:
+        pass
 
+    def __call__(self, handler_callback: Callable):
+        async def inner(update: Update, context: CustomContext):
+            kwargs = self.get_handler_kwargs(handler_callback, update, context)
+            return await handler_callback(**kwargs)
 
-@asynccontextmanager
-async def layer_1(update, context):
-    print('in layer 1')
-    yield
-    print('out layer 1')
+        return inner
 
+    @classmethod
+    def get_handler_kwargs(cls, handler_callback: Callable, update: Update, context: CustomContext):
+        signature = inspect.signature(handler_callback)
+        kwargs = {}
+        for param in signature.parameters.values():
+            param.name
+            if param.name == 'update':
+                kwargs[param.name] = update
+            elif param.name == 'context':
+                kwargs[param.name] = context
+            else:
+                if hasattr(update, param.name):
+                    kwargs[param.name] = getattr(update, param.name)
+                elif hasattr(context, param.name):
+                    kwargs[param.name] = getattr(context, param.name)
+                else:
+                    raise ValueError(f'Invalid handler argument ({param}). Signature missmatch for {handler_callback}.')
 
-@asynccontextmanager
-async def layer_2(update, context):
-    print('in layer 2')
-    yield
-    print('out layer 2')
+            if param.annotation is not param.empty and not isinstance(kwargs[param.name], param.annotation):
+                raise TypeError(f'Invalid handler argument type ({param}). Signature missmatch for {handler_callback}.')
 
-
-@asynccontextmanager
-async def layer_3(update, context):
-    print('in layer 2')
-    yield
-    print('out layer 2')
+        return kwargs

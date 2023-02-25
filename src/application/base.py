@@ -59,7 +59,7 @@ MiddlewaresType: TypeAlias = list[Callable[[Update, CustomContext], AsyncContext
 
 # TODO rename to ???
 class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, None, JobQueue]):
-    _middlewares: list[Callable[[Update, CustomContext], AsyncContextDecorator]] = []
+    _middlewares: MiddlewaresType = []
 
     def add_middlewares(self, middlewares: MiddlewaresType):
         if self._middlewares:
@@ -97,6 +97,7 @@ class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, No
         # - @asynccontextmanager produce a decorator, which called with `layer` argument
         # - reversed: the last layer added will be called first when `handler_caller` invokes unwrapping
         for middleware in reversed(self._middlewares):
-            layer = middleware(update, context)(layer)
+            middleware_decorator = middleware(update, context)
+            layer = middleware_decorator.__call__(layer)
 
         return layer

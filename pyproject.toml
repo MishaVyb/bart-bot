@@ -1,3 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = [
+    'tests'
+]
+markers = []
+addopts = []
+pythonpath = 'src'
+
 [tool.mypy]
 exclude = [
     'venv',

@@ -6,4 +6,4 @@ from database.models import UserModel
 
 class CustomContext(CallbackContext[ExtBot, None, None, None]):
     session: AsyncSession  # TODO rename db_session
-    db_user: UserModel
+    user: UserModel
