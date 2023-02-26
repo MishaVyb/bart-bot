@@ -3,13 +3,12 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from configurations import AppConfig
-from tests.conftest import ClientIntegration
+from tests.integration.client import ClientIntegration
 
 pytestmark = pytest.mark.anyio
 
 
 async def test_user_middleware(vybornyy: ClientIntegration, config: AppConfig, session: AsyncSession):
-
     # no user at DB before act:
     with pytest.raises(NoResultFound):
         await vybornyy.db_user

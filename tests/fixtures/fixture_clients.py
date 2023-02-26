@@ -2,7 +2,8 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram.ext import Application
 
-from tests.conftest import ClientIntegration, TestConfig
+from tests.conftest import TestConfig
+from tests.integration.client import ClientIntegration
 
 # TODO: move to config!
 #

@@ -1,11 +1,11 @@
+import imagehash
 import pytest
+from PIL import Image
 from pyrogram.types import InputMediaPhoto
+
 from configurations import AppConfig
 from content import CONTENT
-from tests.conftest import ClientIntegration
-
-from PIL import Image
-import imagehash
+from tests.integration.client import ClientIntegration
 
 pytestmark = pytest.mark.anyio
 
@@ -34,7 +34,6 @@ async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, ima
 
 
 async def test_emoji_food_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):
-
     # arrange: add 1 photo to user storage
     posted_image = images[0]
     async with vybornyy.collect():
