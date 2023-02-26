@@ -20,7 +20,7 @@ from configurations import AppConfig
 from database.models import UserModel
 
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+logger.setLevel('INFO')
 if not logger.hasHandlers():
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))

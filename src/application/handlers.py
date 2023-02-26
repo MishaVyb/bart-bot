@@ -1,3 +1,4 @@
+from asyncio import sleep
 from telegram import Message, ReplyKeyboardMarkup
 from telegram.ext import filters
 
@@ -32,6 +33,9 @@ async def photo(message: Message, service: AppService) -> None:
 
 @handler.message(filters.Regex(r'|'.join(CONTENT.buttons)))
 async def emoji_food(message: Message, service: AppService) -> None:
+    await message.reply_text(CONTENT.messages.receive_food.get())
+    await sleep(0.5)
+
     try:
         photo = await service.get_media_id()
     except NoPhotosException:
