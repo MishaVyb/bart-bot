@@ -1,17 +1,19 @@
+import asyncio
 import builtins
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
+import time
 
 import pytest
 from anyio import sleep
 from pyrogram import Client, filters  # type: ignore [attr-defined]
 from pyrogram.errors.exceptions import bad_request_400
-from pyrogram.types import Message, User
+from pyrogram.types import Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from telegram.ext import Application
-
+from telegram.ext import ApplicationHandlerStop
 from application.context import CustomContext
 from database.models import UserModel
 from tests.conftest import TestConfig, logger
@@ -34,10 +36,12 @@ class ClientIntegration:
         self.db_session = db_session
         self.config = config
         self.target = config.botname  # TODO: create telegram bot from @BotFather dynamically
-        self.timeout = config.integration_timeout_sec
 
         self._collected_replyes: list[Message] = []
         self._collected_exceptions: list[Exception] = []
+        self._collection_amount: int | None = None
+        self._collection_max_timeout: float = config.integration_timeout_sec
+        self._collection: asyncio.Event = asyncio.Event()
 
     def __str__(self) -> str:
         return f'<{self.target} integration ({self.credits})'
@@ -69,34 +73,30 @@ class ClientIntegration:
         # set error handler-callback to store any exception received to tell pytest that integration test was failed
         #
         # NOTE
-        # if native application error handler rise ApplicationHandlerStop after error handling, this error handler
+        # if native application error handler raise ApplicationHandlerStop after error handling, this error handler
         # will be omitted and 'self._collected_exceptions' list leaves empty
         self.app.add_error_handler(self._app_exception_registry)
 
-        logger.info(f'Make authorization for {self}. ')
         try:
+            logger.info(f'Make authorization for {self}. ')
             # NOTE: some phonenumbers are registered already, some other not.
             # to be sure, handle sign up action by patching std input
             with self._patch_signup_inout():
                 await self.client.start()
 
-            # update local User properties (it has been initialized at client.start() call above)
             if self.config.strict_mode:
                 logger.info('Strict mode is on. Set user credentials and username. It takes a while. ')
 
-                self.tg_user.first_name, self.tg_user.last_name = self.credits.fullname
-                self.tg_user.username = self.credits.username
-
-                # update remote User properties
+                # update remote Telegram User properties:
                 await self.client.update_profile(*self.credits.fullname)
                 try:
                     await self.client.set_username(self.credits.username)
                 except bad_request_400.UsernameNotModified as e:
                     logger.debug(e)
 
-            # TODO stop chat with target bot and /start it again
-            # TODO kill all other potential account sessions for current phonenumber
-            # TODO set 2 factor auth (that potentials other account sessions won't use it while testing)
+                # TODO stop chat with target bot and /start it again
+                # TODO kill all other potential account sessions for current phonenumber
+                # TODO set 2 factor auth (that potentials other account sessions won't use it while testing)
 
             yield self
         finally:
@@ -109,26 +109,46 @@ class ClientIntegration:
                 logger.warning(f'Stopping client fails: {e}')
 
     @asynccontextmanager
-    async def collect(self, *, amount: int = None, timeout: float = None, strict: bool = True):
+    async def collect(self, *, amount: int = None, strict_mode: bool = False, exceptions: bool = True):
         """
         Context manager for Telegram Bot application test integration.
+
+        * `amount`: how many messages is expecting to receive.
+        * `strict_mode`: wait until messages received ant then sleep for `_collection_max_timeout` seconds to be sure
+        there are no more messages after expected ones.
+        * `exceptions`: check there are no unhandled exceptions inside app was risen.
         """
-        timeout = timeout if timeout is not None else self.timeout
+        strict_mode = strict_mode or self.config.strict_mode
+
+        self._collection_amount = amount
         self._collected_replyes.clear()
         self._collected_exceptions.clear()
+        self._collection.clear()
 
         try:
             yield self._collected_replyes
         finally:
-            logger.info(f'Waiting for replyes ({timeout} sec). ' if timeout else 'No waiting for reply. ')
-            await sleep(timeout)  # FIXME stupid sleep statement, handle coroutine waitings
+            logger.info(f'Waiting for replyes. ({strict_mode=}, {amount=}, timeout={self._collection_max_timeout}). ')
+            collection_time_start = time.time()
 
-            if strict:
-                assert not self._collected_exceptions, 'Integration test failed. Unhandled app exception received. '
-            if amount is not None:
-                assert (
-                    len(self._collected_replyes) == amount
-                ), 'Integration test failed. Received unexpected messages amount. '
+            if amount:
+                # NOTE:
+                # wait until all requested messages amount will be collected or the waiting time (timeout) will end
+                # if strict_mode, then wait another `timeout` sec to be sure there are no other messages will be sent
+                timout = asyncio.create_task(self._collection_max_timeout_waiting())
+                await self._collection.wait()
+                timout.cancel()
+                if strict_mode:
+                    await sleep(self._collection_max_timeout)
+            else:
+                await sleep(self._collection_max_timeout)
+
+            if exceptions:
+                assert not self._collected_exceptions, 'Unhandled app exception received. '
+            if amount:
+                assert len(self._collected_replyes) == amount, 'Received unexpected messages amount. '
+
+            logger.info(f'Done! Replyes collecting in: {time.time() - collection_time_start} sec. ')
 
     @contextmanager
     def _patch_signup_inout(self):
@@ -154,27 +174,31 @@ class ClientIntegration:
         logger.debug(f'[mock output] {args} {kwargs}')
 
     @property
-    def tg_user(self) -> User:
-        if not self.client.me:
-            raise ValueError(f'None {User}. Call for {self.context} before. ')
-
-        return self.client.me
-
-    @property
-    async def db_user(self) -> UserModel:
+    async def user(self) -> UserModel:
         if not self.db_session:
             raise RuntimeError(f'None {AsyncSession}. Assignee it to {self.db_session=} before. ')
 
+        tg_user = await self.client.get_me() if self.config.strict_mode else self.client.me
+        assert tg_user
+
         user_query = (
-            select(UserModel)
-            .filter(UserModel.id == self.tg_user.id)
-            .options(selectinload(UserModel.history))  # fmt: off
+            select(UserModel).filter(UserModel.id == tg_user.id).options(selectinload(UserModel.history))  # fmt: off
         )
-        return (await self.db_session.execute(user_query)).scalar_one()
+        db_user = (await self.db_session.execute(user_query)).scalar_one()
+        db_user.tg = tg_user
+        return db_user
+
+    async def _collection_max_timeout_waiting(self):
+        await sleep(self._collection_max_timeout)
+        self._collection.set()
 
     async def _client_message_registry(self, client: Client, message: Message):
-        logger.info('[add message to test collection]')
         self._collected_replyes.append(message)
+        logger.info(f'Add message to test collection: {len(self._collected_replyes)}. ')
+
+        if len(self._collected_replyes) == self._collection_amount:
+            self._collection.set()
 
     async def _app_exception_registry(self, update: object, context: CustomContext):
         self._collected_exceptions.append(context.error)
+        raise ApplicationHandlerStop

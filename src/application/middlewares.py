@@ -53,7 +53,7 @@ from application.context import CustomContext
 from configurations import CONFIG, logger
 from database.models import UserModel
 from service import AppService
-from utils import get_func_name, get_or_create
+from utils import get_or_create
 
 
 @asynccontextmanager
@@ -80,8 +80,6 @@ async def session_middleware(update: Update, context: CustomContext):
 
 @asynccontextmanager
 async def user_middleware(update: Update, context: CustomContext):
-    logger.info(f'in: {get_func_name()}')
-
     if not update.effective_user:
         raise ValueError
 
@@ -97,7 +95,6 @@ async def user_middleware(update: Update, context: CustomContext):
         context.tg = update.effective_user
 
     yield
-    logger.info(f'Out: {get_func_name()}')
     # TODO: save orm user updates... or it handled by alchemy automatically?
 
 

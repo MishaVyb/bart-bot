@@ -14,7 +14,7 @@ async def test_start_handler(vybornyy: ClientIntegration, config: AppConfig):
     async with vybornyy.collect(amount=1) as replyes:
         await vybornyy.client.send_message(config.botname, '/start')
 
-    assert replyes[0].text == CONTENT.messages.start.format(username=vybornyy.tg_user.username or '')
+    assert replyes[0].text == CONTENT.messages.start.format(username=(await vybornyy.user).tg.username or '')
 
 
 async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):
@@ -26,7 +26,8 @@ async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, ima
 
     # [2] test many photos
     async with vybornyy.collect(
-        # amount=1, # TODO one reply for whole message group
+        amount=1,
+        # strict=True # TODO one reply for whole message group
     ) as replyes:
         await vybornyy.client.send_media_group(config.botname, [InputMediaPhoto(image) for image in images[1:]])
 
@@ -48,7 +49,7 @@ async def test_emoji_food_handler(vybornyy: ClientIntegration, config: AppConfig
     assert eating_message.text in CONTENT.messages.receive_food
 
     received_file_id = photo_message.photo.file_id
-    stored_file_id = (await vybornyy.db_user).history[0].media_id
+    stored_file_id = (await vybornyy.user).history[0].media_id
 
     # NOTE:
     # Telegram has different ids for User client and Bot client
@@ -61,12 +62,3 @@ async def test_emoji_food_handler(vybornyy: ClientIntegration, config: AppConfig
     # Therefore we ensure that photo received equals to image loaded before by hash comparision
     received_file = await vybornyy.client.download_media(received_file_id, in_memory=True)
     assert imagehash.average_hash(Image.open(received_file)) == imagehash.average_hash(Image.open(posted_image))
-
-    # query = select(MessageModel).filter(
-    #     MessageModel.user_id==(await vybornyy.db_user).storage,
-    #     MessageModel.media_id==received_file_id
-    # )
-    # result = await session.execute(query)
-
-    # assert result.scalar_one_or_none()
-    # assert replyes[1].caption in CONTENT.messages.send_photo.any

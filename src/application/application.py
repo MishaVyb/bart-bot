@@ -1,6 +1,5 @@
 from types import NoneType
 
-import sqlalchemy
 from telegram.ext import ContextTypes
 
 from application.base import LayeredApplication
@@ -50,14 +49,8 @@ app: LayeredApplication = builder.build()
 
 
 async def error_handler(update: object, context: CustomContext) -> None:
-    # UNUSED
-    if isinstance(context.error, sqlalchemy.exc.IntegrityError):
-        logger.error(f'IntegrityError: {context.error}')
-
-    else:
-        logger.error('')
-        logger.error(
-            '\n\n------------------------------------------------------------------'
-            '\n[Exception while handling an update] ',
-            exc_info=context.error,
-        )
+    logger.error(
+        f'[Exception while handling an update] {context.error}. Full traceback: \n'
+        '---------------------------------------------------------------------\n\n',
+        exc_info=context.error,
+    )

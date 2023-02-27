@@ -27,12 +27,12 @@ async def application(config: AppConfig):
     await app.post_init(app)
     await app.start()
 
-    logger.info('Stat app polling... ')
+    logger.debug('Start test app polling... ')
     await app.updater.start_polling()
 
     yield app
 
-    logger.info('Stop app polling... ')
+    logger.debug('Stop test app polling... ')
     await app.updater.stop()
     await app.stop()
     await app.shutdown()
