@@ -60,7 +60,7 @@ from utils import get_or_create
 async def session_context():
     # ??? define engine in scope for every update or globally for all app only once in beginnings
     #
-    engine = create_async_engine(CONFIG.db_uri(), echo=CONFIG.sql_logs)
+    engine = create_async_engine(CONFIG.db_url, echo=CONFIG.sql_logs)
     async with AsyncSession(engine) as session:
         async with session.begin():
             yield session
@@ -87,12 +87,12 @@ async def user_middleware(update: Update, context: CustomContext):
         context.session,
         UserModel,
         id=update.effective_user.id,
-        extra_kwargs={'storage': update.effective_user.id, 'tg': update.effective_user},  # set default storage
+        extra_kwargs={'tg': update.effective_user},  # provide `tg` for __post_init__
     )
 
-    # in case user already exists at DB, `tg` was ignored and we assign it directly:
+    # in case user already exists at DB, `tg` must be assigned directly:
     if not hasattr(context.user, 'tg'):
-        context.tg = update.effective_user
+        context.user.tg = update.effective_user
 
     yield
     # TODO: save orm user updates... or it handled by alchemy automatically?

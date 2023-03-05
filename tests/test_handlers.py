@@ -5,7 +5,7 @@ from pyrogram.types import InputMediaPhoto
 
 from configurations import AppConfig
 from content import CONTENT
-from tests.integration.client import ClientIntegration
+from tests.tools.integration import ClientIntegration
 
 pytestmark = pytest.mark.anyio
 
@@ -62,3 +62,10 @@ async def test_emoji_food_handler(vybornyy: ClientIntegration, config: AppConfig
     # Therefore we ensure that photo received equals to image loaded before by hash comparision
     received_file = await vybornyy.client.download_media(received_file_id, in_memory=True)
     assert imagehash.average_hash(Image.open(received_file)) == imagehash.average_hash(Image.open(posted_image))
+
+
+async def test_all_handler(vybornyy: ClientIntegration, config: AppConfig):
+    async with vybornyy.collect(amount=1) as replyes:
+        await vybornyy.client.send_message(config.botname, 'some other message')
+
+    assert replyes[0].text in CONTENT.messages.regular

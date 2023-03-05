@@ -5,12 +5,12 @@ pytest
 pyrogram
 tgcrypto            # for fast pyrogram performance
 anyio
-sqlalchemy_utils
+sqlalchemy-utils
 psycopg2-binary     # for sqlalchemy_utils
+imagehash           # for assert image equality
 
 # linters:
 mypy
-isort
 flake8
 pep8-naming
 flake8-broken-line
@@ -19,6 +19,7 @@ flake8-isort
 Flake8-pyproject
 
 # formaters
+isort
 black
 autoflake==1.7.8
 pre-commit

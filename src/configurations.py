@@ -3,6 +3,7 @@ from pprint import pformat
 from typing import Literal
 
 from pydantic import BaseSettings, SecretStr
+from sqlalchemy.engine import URL
 from telegram import __version__ as tg_version
 
 # checking python version before starting app
@@ -46,17 +47,16 @@ class AppConfig(BaseSettings):
     db_port: int = 5432
     db_name: str
 
-    def db_uri(self, db: str = None, dialect: str = None, host: str = None, port: int = None, name: str = None):
-        # TODO: use sqlalchemy.engine.URL OR pydantic.PostgresDsn.build
-
-        db = db or self.db
-        dialect = dialect or self.db_dialect
-        user = self.db_user
-        password = self.db_password.get_secret_value()
-        host = host or self.db_host
-        port = port or self.db_port
-        name = name or self.db_name
-        return f'{db}+{dialect}://{user}:{password}@{host}:{port}/{name}'
+    @property
+    def db_url(self):
+        return URL.create(
+            drivername=f'{self.db}+{self.db_dialect}',
+            username=self.db_user,
+            password=self.db_password.get_secret_value(),
+            host=self.db_host,
+            port=self.db_port,
+            database=self.db_name,
+        )
 
     class Config:
         env_file = 'build.env', 'test.env', 'local.env'  # 'local.env' has the highest priority

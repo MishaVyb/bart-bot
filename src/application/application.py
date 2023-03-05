@@ -15,7 +15,7 @@ from application.middlewares import (
 from configurations import CONFIG, logger
 
 
-async def post_init(app: LayeredApplication):
+async def app_init(app: LayeredApplication):
     logger.info('App post init. ')
     app.add_middlewares(
         [
@@ -26,7 +26,7 @@ async def post_init(app: LayeredApplication):
             args_middleware,
         ]
     )
-    app.add_handlers(handler)
+    app.add_handlers(list(handler.values()))  # FIXME
     app.add_error_handler(error_handler)
 
 
@@ -43,7 +43,7 @@ builder = (
     .token(CONFIG.bot_token.get_secret_value())
     .context_types(NoneContextType)
     .application_class(LayeredApplication)
-    .post_init(post_init)
+    .post_init(app_init)
 )
 app: LayeredApplication = builder.build()
 

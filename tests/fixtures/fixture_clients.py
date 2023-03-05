@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from telegram.ext import Application
 
 from tests.conftest import TestConfig
-from tests.integration.client import ClientIntegration
+from tests.tools.integration import ClientIntegration
 
 # TODO: move to config!
 #
@@ -31,7 +31,7 @@ from tests.integration.client import ClientIntegration
 @pytest.fixture(scope='session')
 async def vybornyy_context(config: TestConfig, application: Application):
     vybornyy = ClientIntegration(app=application, config=config)
-    async with vybornyy.context('vybornyy'):
+    async with vybornyy.session_context('vybornyy'):
         yield vybornyy
 
 

@@ -34,9 +34,17 @@ ci:
 	mypy .
 	flake8 .
 
+database:
+	@echo "Drop current database, remove all migrations file and generate completely new ones. Are you sure?"
+	@echo "Enter to proceed. Ctr-C to abort."
+	@read
+	rm -f alembic/versions/*
+	python tmp_database.py
+	alembic revision --autogenerate
+	alembic upgrade head
 
 push:
-	pip freeze > requirements.txt
+	pre-commit run --all-files || True
 	@git status
 	@echo "All files listed above will be added to commit. Enter commit message to proceed. Ctr-C to abort."
 	@read -p "Commit message: " COMMIT_MESSAGE; git add . ; git commit -m "$$COMMIT_MESSAGE"

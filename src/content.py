@@ -26,6 +26,8 @@ class Replyes(list[str]):
 class BotContent(BaseModel):
     buttons: tuple[str, str, str, str, str, str, str, str, str]
     messages: BotMessages
+    confirm_answers: list[str]
+    reject_answers: list[str]
 
     @property
     def keyboard(self):
@@ -58,6 +60,13 @@ class ExceptionMessages(BaseModel):
     repeated_photo: str
     no_photos: str
 
+    user_not_start_bot: str
+    already_added_to_famely: str
+
+
+class FamelyHandlingReplyes(BaseModel):
+    request_for_adding_to_famely: str
+
 
 class BotMessages(BaseModel):
     start: str
@@ -68,6 +77,7 @@ class BotMessages(BaseModel):
     receive_food: Replyes
     send_photo: SendPhotoReplyes
     receive_photo: ReceivePhotoReplyes
+    famely: FamelyHandlingReplyes
     exceptions: ExceptionMessages  # TODO move to BotContent layer
 
 

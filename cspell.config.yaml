@@ -35,6 +35,7 @@ words:
   - sqlalchemy
   - testdb
   - tgcrypto
+  - tgintegration
   - Unpickler
   - venv
   - vybornyy

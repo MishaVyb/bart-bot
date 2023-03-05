@@ -1,11 +1,12 @@
 from contextlib import AsyncContextDecorator
 from typing import Callable, TypeAlias
 
-from telegram import Update
+from telegram import Bot, Update
 from telegram.ext import (
     Application,
     BaseHandler,
     CommandHandler,
+    ConversationHandler,
     ExtBot,
     JobQueue,
     MessageHandler,
@@ -16,9 +17,11 @@ from application.context import CustomContext
 from configurations import logger
 
 
-class APPHandlers(list[BaseHandler]):
+class APPHandlers(dict[str, BaseHandler]):
     """
-    Handlers regestry.
+    Handlers regestry. Alternative way for adding handlers to application.
+
+    Docs: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Code-snippets#advanced-snippets
     """
 
     # TODO: type annotations
@@ -49,9 +52,10 @@ class APPHandlers(list[BaseHandler]):
 
         return callback
 
-    def append(self, handler: BaseHandler) -> None:
-        logger.debug(f'Add <{handler.callback.__name__}> handler to registry. ')
-        return super().append(handler)
+    def append(self, handler: BaseHandler, *, handler_name: str = '') -> None:
+        handler_name = handler_name or handler.callback.__name__
+        logger.debug(f'Add <{handler_name}> handler to registry. ')
+        self[handler_name] = handler
 
 
 MiddlewaresType: TypeAlias = list[Callable[[Update, CustomContext], AsyncContextDecorator]]
@@ -67,31 +71,49 @@ class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, No
 
         self._middlewares = list(middlewares)
 
-    def add_handlers(self, handlers, group=0) -> None:  # TODO annotations here and below!!
+    def add_handlers(self, handlers: dict | list, group=0) -> None:  # TODO annotations here and below!!
         if isinstance(handlers, dict):
             raise NotImplementedError
 
         for handler in handlers:
-            handler.callback = self._handler_factory(handler.callback)
+            if isinstance(handler, ConversationHandler):
+                # FIXME
+                conversation_handler = handler
+
+                for entry_handler in conversation_handler._entry_points:
+                    logger.debug(f'[Add <{entry_handler.callback.__name__}> handler] ')
+                    entry_handler.callback = self._handler_callback_factory(entry_handler.callback)
+
+                for key, state_handlers in conversation_handler._states.items():
+                    for state_handler in state_handlers:
+                        logger.debug(f'[Add <{state_handler.callback.__name__}> handler] ')
+                        state_handler.callback = self._handler_callback_factory(state_handler.callback)
+
+                for fallback_handler in conversation_handler._fallbacks:
+                    logger.debug(f'[Add <{fallback_handler.callback.__name__}> handler] ')
+                    fallback_handler.callback = self._handler_callback_factory(fallback_handler.callback)
+
+            else:
+                handler.callback = self._handler_callback_factory(handler.callback)
 
         super().add_handlers(handlers)
 
-    def _handler_factory(self, handler: Callable):
+    def _handler_callback_factory(self, original_callback: Callable):
         async def handler_caller(update, context):
-            logger.info(f'[Handler: <{handler.__name__}>] Handling update. ')
+            logger.info(f'[Handler: <{original_callback.__name__}>] Handling update. ')
 
-            wrapped = self._wrap_into_middlewares(handler, update, context)
+            wrapped = self._wrap_into_middlewares(original_callback, update, context)
             await wrapped(update, context)  # unwrap (call for) one layer after another
 
-            logger.info(f'[Handler: <{handler.__name__}>] Done. ')
+            logger.info(f'[Handler: <{original_callback.__name__}>] Done. ')
 
         return handler_caller
 
-    def _wrap_into_middlewares(self, handler: Callable, update, context):
+    def _wrap_into_middlewares(self, original_callback: Callable, update, context):
         """
-        Wrap handler into middlewares.
+        Wrap original_callback into middlewares.
         """
-        layer = handler  # variable alias to avoid Unbound error
+        layer = original_callback  # variable alias to avoid Unbound error
 
         # - all middlewares wrapped into @asynccontextmanager
         # - @asynccontextmanager produce a decorator, which called with `layer` argument
@@ -101,3 +123,10 @@ class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, No
             layer = middleware_decorator.__call__(layer)
 
         return layer
+
+
+class ExtendedBot(Bot):
+    async def send_message(self, *args, **kwargs):
+        # TODO provide Session to bot object (in middleware)
+        # and append history here
+        return await super().send_message(*args, **kwargs)

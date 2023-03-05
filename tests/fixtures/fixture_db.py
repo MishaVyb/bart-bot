@@ -9,11 +9,11 @@ from tests.conftest import logger
 
 @pytest.fixture(scope='session')
 def engine(config: AppConfig):
-    return create_async_engine(config.db_uri(), echo=config.sql_logs, echo_pool=config.sql_logs)
+    return create_async_engine(config.db_url, echo=config.sql_logs, echo_pool=config.sql_logs)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def setup_database(engine: AsyncEngine):
+@pytest.fixture(scope='session')
+async def setup_database(engine: AsyncEngine):
     logger.debug(f'Set up test database: {engine.url=}. ')
 
     url = engine.url.set(drivername='postgresql+psycopg2')
@@ -30,9 +30,10 @@ def setup_database(engine: AsyncEngine):
         drop_database(url)
 
 
-@pytest.fixture(autouse=True, scope='function')
-async def setup_tables(engine: AsyncEngine):
+@pytest.fixture(scope='function')
+async def setup_tables(engine: AsyncEngine, setup_database: None):
     async with engine.begin() as connection:
+        # TODO create tables by alembic
         await connection.run_sync(BaseModel.metadata.create_all)
 
     yield
@@ -43,6 +44,6 @@ async def setup_tables(engine: AsyncEngine):
 
 
 @pytest.fixture
-async def session(engine: AsyncEngine):
+async def session(engine: AsyncEngine, setup_tables: None):
     async with AsyncSession(engine) as session, session.begin():
         yield session

@@ -45,14 +45,14 @@ class TestConfig(AppConfig):
     username_postfix_len: int = 4
     integration_timeout_sec: float = 2.0
 
-    _phonenumbers: set[str] = {'9996612048'}
-    _dc_number: int = 1
+    phonenumbers: set[str]
+    dc_number: int = 1
 
     def get_phonenumber(self):
-        return self._phonenumbers.pop()  # FIXME
+        return self.phonenumbers.pop()  # FIXME
 
     def get_confirmation_code(self):
-        return str(self._dc_number) * 5
+        return str(self.dc_number) * 5
 
     def get_username(self, tag: str):
         postfix = ''.join(random.choice(string.ascii_lowercase) for _ in range(self.username_postfix_len))

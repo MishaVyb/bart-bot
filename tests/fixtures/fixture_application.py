@@ -1,12 +1,12 @@
 import pytest
 
-from application.application import NoneContextType, post_init
+from application.application import NoneContextType, app_init
 from application.base import LayeredApplication
 from configurations import AppConfig
 from tests.conftest import logger
 
 
-@pytest.fixture(autouse=True, scope='session')
+@pytest.fixture(scope='session')
 async def application(config: AppConfig):
     builder = (
         LayeredApplication.builder()
@@ -18,7 +18,7 @@ async def application(config: AppConfig):
         .token(config.bot_token.get_secret_value() + '/test')
         .context_types(NoneContextType)
         .application_class(LayeredApplication)
-        .post_init(post_init)
+        .post_init(app_init)
     )
 
     app: LayeredApplication = builder.build()

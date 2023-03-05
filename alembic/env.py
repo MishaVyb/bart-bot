@@ -16,7 +16,7 @@ from database import BaseModel
 
 # configurations:
 config = context.config
-config.set_main_option('sqlalchemy.url', CONFIG.db_uri())
+config.set_main_option('sqlalchemy.url', CONFIG.db_url.render_as_string(hide_password=False))
 
 # logging configurations:
 if config.config_file_name is not None:
