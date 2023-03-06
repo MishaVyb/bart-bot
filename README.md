@@ -16,9 +16,9 @@ Send any photo to bot chanel. Then feed your pet by emoji food. And wait for rep
 
 > Bart Bot behaves like yor real pet...
 
-## Implementation
-- Fully asynchronous. Async `PTB`. Async `SQLAlchemy`. Async `Pyrogram`.
-- Fully durable. Store all chats history in database.
-- Custom middlewares support. Familiar to us by all web frameworks.
-- Covered by tests. E2E tests launched at separate Telegram [environment](https://core.telegram.org/bots/features#testing-your-bot) with test [accounts](https://core.telegram.org/api/auth#test-accounts).
+## Dev Features
+- Asynchronous.
+- Durable. Store all chats history in **database**.
+- Pragmatic. Custom **middlewares** familiar to us by all web frameworks.
+- Covered by tests. Automates **E2E tests** runing at separate Telegram [environment](https://core.telegram.org/bots/features#testing-your-bot) with test [accounts](https://core.telegram.org/api/auth#test-accounts).
 
