@@ -27,17 +27,11 @@ class AppConfig(BaseSettings):
     sql_logs: bool = False
 
     bot_token: SecretStr
-    yadisk_token: SecretStr
 
-    admin_chat_id: int | None
     botname: str = 'BartPhotosBot'
     appname: str = 'bart-bot'
-    remote_filepath: str = f'{appname}.data'
-    dump_filepath: str = f'{appname}.dump.json'
+    admin_id: int | None = None
     content_filepath: str = f'{appname}.content.yaml'
-
-    admin_id: int
-    admin_sharings_ids: list[int]
 
     db: str = 'postgresql'
     db_dialect: str = 'asyncpg'
