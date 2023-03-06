@@ -71,7 +71,7 @@ class LayeredApplication(Application[ExtBot[None], CustomContext, None, None, No
 
         self._middlewares = list(middlewares)
 
-    def add_handlers(self, handlers: dict | list, group=0) -> None:  # TODO annotations here and below!!
+    def add_handlers(self, handlers: dict | list, group: int = 0) -> None:  # type: ignore
         if isinstance(handlers, dict):
             raise NotImplementedError
 

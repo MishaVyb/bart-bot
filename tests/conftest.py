@@ -1,7 +1,6 @@
 import logging
 
 import pytest
-from pyrogram import Client, filters  # type: ignore [attr-defined]
 
 from configurations import AppConfig
 

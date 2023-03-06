@@ -1,16 +1,16 @@
 import asyncio
 import builtins
-from random import randint
 import re
 import time
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
+from random import randint
 from typing import ClassVar
 
 import pytest
 from anyio import sleep
 from pyrogram import Client, filters  # type: ignore [attr-defined]
-from pyrogram.raw.functions.messages import DeleteHistory
+from pyrogram.raw.functions.messages import DeleteHistory  # type: ignore [attr-defined]
 from pyrogram.types import Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -131,7 +131,7 @@ class ClientIntegration:
         # if native application error handler raise ApplicationHandlerStop after error handling, this error handler
         # will be omitted and 'self._collected_exceptions' list leaves empty
         # TODO transfer to app.post_init
-        self.app.add_error_handler(self._collect_app_exceptions_callback)
+        self.app.add_error_handler(self._collect_app_exceptions_callback)  # type: ignore
 
         try:
             logger.info(f'Make authorization for {self}. ')

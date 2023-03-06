@@ -18,8 +18,10 @@ async def test_integration_exceptions_collector(
     - send command to invoke that handler
     - expecting an error will be risen
     """
-
-    application.add_handler(CommandHandler('error', lambda u, c: 1 / 0), group=-1)  # -1 for highest priority
+    application.add_handler(
+        CommandHandler('error', lambda u, c: 1 / 0),  # type: ignore
+        group=-1,  # -1 for highest priority
+    )
 
     vybornyy._collection_max_timeout = 10.0
     with pytest.raises(ZeroDivisionError):
