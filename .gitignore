@@ -357,7 +357,8 @@ venv*
 .DS_Store
 
 # IDE settings
-.vscode*
+.vscode
+.obsidian
 
 # local storage
 *.sqlite3
