@@ -19,10 +19,10 @@ jobs:
     services:
       database:
         image: postgres
-        # env:
-        #   POSTGRES_DB: postgres
-        #   POSTGRES_USER: postgres
-        #   POSTGRES_PASSWORD: postgres
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
