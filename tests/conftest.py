@@ -1,6 +1,4 @@
 import logging
-import random
-import string
 
 import pytest
 from pyrogram import Client, filters  # type: ignore [attr-defined]
@@ -8,7 +6,7 @@ from pyrogram import Client, filters  # type: ignore [attr-defined]
 from configurations import AppConfig
 
 logger = logging.getLogger(__name__)
-logger.setLevel('INFO')
+logger.setLevel('DEBUG')
 if not logger.hasHandlers():
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
@@ -40,23 +38,13 @@ def anyio_backend():
 class TestConfig(AppConfig):
     api_id: int
     api_hash: str
+
     strict_mode: bool
-
-    username_postfix_len: int = 4
     integration_timeout_sec: float = 2.0
-
-    phonenumbers: set[str]
-    dc_number: int = 1
+    phonenumbers: set[str] = set()
 
     def get_phonenumber(self):
-        return self.phonenumbers.pop()  # FIXME
-
-    def get_confirmation_code(self):
-        return str(self.dc_number) * 5
-
-    def get_username(self, tag: str):
-        postfix = ''.join(random.choice(string.ascii_lowercase) for _ in range(self.username_postfix_len))
-        return tag + postfix
+        return self.phonenumbers.pop() if self.phonenumbers else None
 
 
 # FIXME make those fixture to be called before any other

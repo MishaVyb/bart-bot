@@ -27,7 +27,7 @@ async def app_init(app: LayeredApplication):
         ]
     )
     app.add_handlers(list(handler.values()))  # FIXME
-    app.add_error_handler(error_handler)
+    # app.add_error_handler(error_handler) # UNUSED
 
 
 NoneContextType = ContextTypes(  # in-memory data is deprecated for this application
@@ -51,6 +51,6 @@ app: LayeredApplication = builder.build()
 async def error_handler(update: object, context: CustomContext) -> None:
     logger.error(
         f'[Exception while handling an update] {context.error}. Full traceback: \n'
-        '---------------------------------------------------------------------\n\n',
+        '----------------------------------------------------------------------\n\n',
         exc_info=context.error,
     )

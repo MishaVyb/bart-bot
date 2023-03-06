@@ -365,9 +365,10 @@ venv*
 *dump.json
 *.zip
 
-# telegram auth sessions
+# pyrogram sessions
 *.session
 *.session-journal
+unknown_errors.txt
 
 # tmp files
 *Untitled*

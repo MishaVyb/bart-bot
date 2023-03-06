@@ -1,3 +1,4 @@
+import asyncpg
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy_utils import create_database, database_exists, drop_database
@@ -37,10 +38,13 @@ async def setup_tables(engine: AsyncEngine, setup_database: None):
         await connection.run_sync(BaseModel.metadata.create_all)
 
     yield
+    await engine.dispose()
 
-    await engine.dispose()  # ???
-    async with engine.begin() as connection:
-        await connection.run_sync(BaseModel.metadata.drop_all)
+    try:
+        async with engine.begin() as connection:
+            await connection.run_sync(BaseModel.metadata.drop_all)
+    except asyncpg.exceptions.DeadlockDetectedError as e:  # FIXME
+        logger.error(e)
 
 
 @pytest.fixture

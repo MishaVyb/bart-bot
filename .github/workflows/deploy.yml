@@ -1,10 +1,8 @@
-name: github-ci-cd.yml
-
+name: github-cd.yml
 on:
   push:
     branches:
       - master
-      - async
 
 env:
   PROJECT_NAME: bart-bot
@@ -53,7 +51,6 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v2
         with:
-          # context: backend/
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
 

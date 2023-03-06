@@ -15,17 +15,17 @@ def base64image():
 
 @pytest.fixture
 def image_1():
-    return 'tests/fixtures/fixture_images/photo_1.jpeg'
+    return 'tests/fixtures/data/photo_1.jpeg'
 
 
 @pytest.fixture
 def image_2():
-    return 'tests/fixtures/fixture_images/photo_2.jpeg'
+    return 'tests/fixtures/data/photo_2.jpeg'
 
 
 @pytest.fixture
 def image_3():
-    return 'tests/fixtures/fixture_images/photo_3.jpeg'
+    return 'tests/fixtures/data/photo_3.jpeg'
 
 
 @pytest.fixture

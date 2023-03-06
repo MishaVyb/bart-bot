@@ -1,6 +1,8 @@
 import functools
 import inspect
+import random
 import re
+import string
 from typing import Type, TypeVar
 
 from sqlalchemy import select
@@ -39,6 +41,14 @@ async def get_or_create(
 def camel_to_snake(case: str):
     case = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', case)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', case).lower()
+
+
+def randstr(length: int = None):
+    """
+    Get random string. Default length is a random also [4, 10].
+    """
+    length = length or random.randint(4, 10)
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 
 def logcontext(wrapped):
