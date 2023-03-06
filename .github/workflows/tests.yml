@@ -1,4 +1,4 @@
-name: tests.yml
+name: tests
 on: push
 
 env:
@@ -7,6 +7,9 @@ env:
   POSTGRES_DB: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
+  db_name: postgres
+  db_user: postgres
+  db_password: postgres
 
 jobs:
   Tests:
