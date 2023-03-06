@@ -15,13 +15,9 @@ def engine(config: AppConfig):
 
 @pytest.fixture(scope='session')
 async def setup_database(engine: AsyncEngine):
-    logger.debug(f'Set up test database: {engine.url=}. ')
-
     url = engine.url.set(drivername='postgresql+psycopg2')
-    if database_exists(url):
-        logger.warning('Running tests against existing database is deprecated. All data will be gone. ')
-        drop_database(url)
 
+    logger.debug(f'Set up test database: {url}. ')
     create_database(url)
 
     yield

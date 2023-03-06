@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from pytest import FixtureRequest
 
@@ -7,7 +8,7 @@ from tests.conftest import TestConfig, logger
 
 @pytest.fixture(scope='session')
 def config(request: FixtureRequest):
-    return TestConfig(_env_file='test.env', botname='TestBartBot')
+    return TestConfig(_env_file='test.env', botname='TestBartBot', db_name=f'pytest_{uuid.uuid4()}')
 
 
 @pytest.fixture(scope='session', autouse=True)
