@@ -4,10 +4,12 @@ ignorePaths:
   - requirements.txt
   - alembic*
   - bart-bot.content.yaml
+  - docs*
 allowCompoundWords: true
 dictionaries:
   - python
 words:
+  - aiogram
   - anyio
   - apscheduler
   - asyncpg
@@ -17,6 +19,7 @@ words:
   - dotenv
   - feedme
   - grnd
+  - inout
   - isnot
   - isort
   - isready
@@ -32,6 +35,7 @@ words:
   - pyrogram
   - pytest
   - selectinload
+  - signup
   - simusik
   - sqlalchemy
   - testdb
@@ -40,7 +44,9 @@ words:
   - Unpickler
   - venv
   - vybornyy
+  - XYYYY
   - yadisk
+  - бана
 ignoreWords: []
 import: []
 enableFiletypes:
