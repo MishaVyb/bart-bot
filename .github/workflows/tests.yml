@@ -1,0 +1,53 @@
+name: tests
+on: push
+
+env:
+  PROJECT_NAME: bart-bot
+
+  DB_NAME: postgres
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  DB_HOST: postgres
+
+jobs:
+  Tests:
+    runs-on: ubuntu-latest
+    container: python:3.10-slim
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: ${{ env.DB_NAME }}
+          POSTGRES_USER: ${{ env.DB_USER }}
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_dev.txt
+
+      - name: Test pytest
+        run: pytest -vv -s
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          PHONENUMBERS: ${{ secrets.PHONENUMBERS }}
+          strict_mode: True
+
+      - name: Test flake8
+        run: |
+          flake8 .
+
+      - name: Test mypy
+        run: |
+          mypy .

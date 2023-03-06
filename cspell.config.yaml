@@ -1,0 +1,52 @@
+version: "0.2"
+ignorePaths:
+  - .gitignore
+  - requirements.txt
+  - alembic*
+  - bart-bot.content.yaml
+allowCompoundWords: true
+dictionaries:
+  - python
+words:
+  - anyio
+  - apscheduler
+  - asyncpg
+  - barticheg
+  - buildx
+  - clsname
+  - dotenv
+  - feedme
+  - grnd
+  - isnot
+  - isort
+  - isready
+  - Misha
+  - mypy
+  - no_photos
+  - ondelete
+  - onupdate
+  - persistences
+  - Pickler
+  - psycopg
+  - pydantic
+  - pyrogram
+  - pytest
+  - selectinload
+  - simusik
+  - sqlalchemy
+  - testdb
+  - tgcrypto
+  - tgintegration
+  - Unpickler
+  - venv
+  - vybornyy
+  - yadisk
+ignoreWords: []
+import: []
+enableFiletypes:
+  - dockercompose
+  - ini
+  - makefile
+  - markdown
+  - toml
+  - makefile
