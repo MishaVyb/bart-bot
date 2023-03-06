@@ -8,9 +8,6 @@ env:
   DB_USER: postgres
   DB_PASSWORD: postgres
   DB_HOST: postgres
-  BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-  API_ID: ${{ secrets.API_ID }}
-  API_HASH: ${{ secrets.API_HASH }}
 
 jobs:
   Tests:
@@ -41,6 +38,10 @@ jobs:
       - name: Test pytest
         run: pytest -vv -s
         env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          API_ID: ${{ secrets.API_ID }}
+          API_HASH: ${{ secrets.API_HASH }}
+          PHONENUMBERS: ${{ secrets.PHONENUMBERS }}
           strict_mode: True
 
       - name: Test flake8
