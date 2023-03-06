@@ -1,6 +1,6 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Test workflow](https://github.com/MishaVyb/bart-bot/actions/workflows/tests.yml/badge.svg)](https://github.com/MishaVyb/bart-bot/actions/workflows/tests.yml)
-[![Test workflow](https://github.com/MishaVyb/bart-bot/actions/workflows/deploy.yml/badge.svg)](https://github.com/MishaVyb/bart-bot/actions/workflows/deploy.yml)
+[![Test workflow](https://github.com/MishaVyb/bart-bot/actions/workflows/deploy.yml/badge.svg)](https://github.com/MishaVyb/bart-bot/actions/workflows/deploy.yml) ![](https://img.shields.io/badge/PTB-20.1-blue) ![](https://img.shields.io/badge/Pyrogram-2.0.1-blue) ![](https://img.shields.io/badge/Anyio-3.6.2-blue) ![](https://img.shields.io/badge/SQLAlchemy-2.0.4-blue)
 
 # Bart Bot
 🥛🍥🥟🍚🥓🍙🥖☕️🍣 <--- 🐈‍⬛
