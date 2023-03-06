@@ -7,9 +7,10 @@ env:
   POSTGRES_DB: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
-  db_name: postgres
-  db_user: postgres
-  db_password: postgres
+  DB_NAME: postgres
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
 
 jobs:
   Tests:
@@ -18,10 +19,10 @@ jobs:
     services:
       database:
         image: postgres
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+        # env:
+        #   POSTGRES_DB: postgres
+        #   POSTGRES_USER: postgres
+        #   POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -37,6 +38,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_dev.txt
 
+      - name: Test pytest
+        run: pytest -vv -s
+
       - name: Test flake8
         run: |
           flake8 .
@@ -44,6 +48,3 @@ jobs:
       - name: Test mypy
         run: |
           mypy .
-
-      - name: Test pytest
-        run: pytest -vv -s
