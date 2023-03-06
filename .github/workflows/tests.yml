@@ -4,13 +4,12 @@ on: push
 env:
   PROJECT_NAME: bart-bot
 
-  POSTGRES_DB: postgres
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
   DB_NAME: postgres
   DB_USER: postgres
   DB_PASSWORD: postgres
   BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+  API_ID: ${{ secrets.API_ID }}
+  API_HASH: ${{ secrets.API_HASH }}
 
 jobs:
   Tests:
@@ -20,9 +19,9 @@ jobs:
       database:
         image: postgres
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ${{ env.DB_NAME }}
+          POSTGRES_USER: ${{ env.DB_USER }}
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -40,6 +39,8 @@ jobs:
 
       - name: Test pytest
         run: pytest -vv -s
+        env:
+          strict_mode: True
 
       - name: Test flake8
         run: |
