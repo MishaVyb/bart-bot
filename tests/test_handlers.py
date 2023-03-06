@@ -17,6 +17,7 @@ async def test_start_handler(vybornyy: ClientIntegration, config: AppConfig):
     assert replyes[0].text == CONTENT.messages.start.format(username=(await vybornyy.user).tg.username or '')
 
 
+@pytest.mark.xfail(reason='[500 Internal Server Error] - [500 STORAGE_CHOOSE_VOLUME_FAILED]')
 async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):
     # [1] test single photo
     async with vybornyy.collect(amount=1) as replyes:
@@ -34,6 +35,7 @@ async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, ima
     assert replyes[0].text in CONTENT.messages.receive_photo.basic
 
 
+@pytest.mark.xfail(reason='[500 Internal Server Error] - [500 STORAGE_CHOOSE_VOLUME_FAILED]')
 async def test_emoji_food_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):
     # arrange: add 1 photo to user storage
     posted_image = images[0]
