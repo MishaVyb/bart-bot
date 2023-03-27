@@ -11,7 +11,7 @@ Send any photo to bot chanel. Then feed your pet by emoji food. And wait for rep
 
 ## Features
 - Uniq. Replying to every one by deferent pre-defined messages.
-- Flexable. Has different starages for every participant. Storage could be shared by adding to Famely.
+- Flexable. Has different starages for every participant. Storage could be shared by adding to family.
 - Unpredictable. Chose a random image to reply after feeding.
 
 > Bart Bot behaves like yor real pet...

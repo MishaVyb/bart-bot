@@ -52,15 +52,13 @@ from telegram import Update
 from application.context import CustomContext
 from configurations import CONFIG, logger
 from database.models import UserModel
+from exceptions import NoUserException
 from service import AppService
-from utils import get_or_create
 
 
 @asynccontextmanager
 async def session_context():
-    # ??? define engine in scope for every update or globally for all app only once in beginnings
-    #
-    engine = create_async_engine(CONFIG.db_url, echo=CONFIG.sql_logs)
+    engine = create_async_engine(CONFIG.db_url, echo=CONFIG.sql_logs, echo_pool=CONFIG.sql_logs)
     async with AsyncSession(engine) as session:
         async with session.begin():
             yield session
@@ -70,12 +68,8 @@ async def session_context():
 @asynccontextmanager
 async def session_middleware(update: Update, context: CustomContext):
     async with session_context() as session:
-        setattr(context, 'session', session)
+        context.session = session
         yield
-        try:
-            delattr(context, 'session')
-        except Exception:
-            logger.error('Delleting session attr failed. ')  # FIXME
 
 
 @asynccontextmanager
@@ -83,19 +77,25 @@ async def user_middleware(update: Update, context: CustomContext):
     if not update.effective_user:
         raise ValueError
 
-    context.user = await get_or_create(
-        context.session,
-        UserModel,
-        id=update.effective_user.id,
-        extra_kwargs={'tg': update.effective_user},  # provide `tg` for __post_init__
-    )
+    try:
+        context.user = await AppService(context.session, None, None).get_user(update.effective_user)
+    except NoUserException:
+        context.user = UserModel(tg=update.effective_user)
+        context.session.add(context.user)
+        logger.info(f'Add new user: {context.user}')
 
-    # in case user already exists at DB, `tg` must be assigned directly:
-    if not hasattr(context.user, 'tg'):
-        context.user.tg = update.effective_user
+    # context.user = await get_or_create(
+    #     context.session,
+    #     UserModel,
+    #     id=update.effective_user.id,
+    #     extra_kwargs={'tg': update.effective_user},  # provide `tg` for __post_init__
+    # )
+
+    # # in case user already exists at DB, `tg` must be assigned directly:
+    # if not hasattr(context.user, 'tg'):
+    #     context.user.tg = update.effective_user
 
     yield
-    # TODO: save orm user updates... or it handled by alchemy automatically?
 
 
 @asynccontextmanager

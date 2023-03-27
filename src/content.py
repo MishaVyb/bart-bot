@@ -53,6 +53,7 @@ class SendPhotoReplyes(BaseModel):
 class ReceivePhotoReplyes(BaseModel):
     initial: Replyes
     basic: Replyes
+    group: Replyes
 
 
 class ExceptionMessages(BaseModel):
@@ -61,11 +62,12 @@ class ExceptionMessages(BaseModel):
     no_photos: str
 
     user_not_start_bot: str
-    already_added_to_famely: str
+    already_added_to_family: str
 
 
-class FamelyHandlingReplyes(BaseModel):
-    request_for_adding_to_famely: str
+class familyHandlingReplyes(BaseModel):
+    request: str
+    confirm: str
 
 
 class BotMessages(BaseModel):
@@ -77,7 +79,7 @@ class BotMessages(BaseModel):
     receive_food: Replyes
     send_photo: SendPhotoReplyes
     receive_photo: ReceivePhotoReplyes
-    famely: FamelyHandlingReplyes
+    family: familyHandlingReplyes
     exceptions: ExceptionMessages  # TODO move to BotContent layer
 
 

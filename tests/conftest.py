@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel('DEBUG')
 if not logger.hasHandlers():
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
+    handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s:%(lineno)s] %(message)s'))
     logger.addHandler(handler)
 
 
@@ -18,15 +18,8 @@ pytest_plugins = [
     'tests.fixtures.fixture_config',
     'tests.fixtures.fixture_db',
     'tests.fixtures.fixture_images',
+    'tests.fixtures.fixture_users',
 ]
-
-
-# UNUSED
-# @pytest.fixture(scope="session")
-# def event_loop():
-#     # by default pytest-asyncio define 'event_loop' as function scoped fixture
-#     # but we need it with session scope
-#     return asyncio.get_event_loop()
 
 
 @pytest.fixture(scope='session')
@@ -48,7 +41,7 @@ class TestConfig(AppConfig):
 
 # FIXME make those fixture to be called before any other
 @pytest.fixture(autouse=True, scope='function')
-def aaa_new_line_function():
+def new_line_function():
     """
     Fixture simple makes new line to separate each test logging output.
     """
@@ -60,7 +53,7 @@ def aaa_new_line_function():
 
 
 @pytest.fixture(autouse=True, scope='session')
-def aaa_new_line_session():
+def new_line_session():
     """
     Fixture simple makes new line to separate each test logging output.
     """

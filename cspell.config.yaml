@@ -10,6 +10,7 @@ dictionaries:
   - python
 words:
   - aiogram
+  - anext
   - anyio
   - apscheduler
   - asyncpg
@@ -18,7 +19,10 @@ words:
   - clsname
   - dotenv
   - feedme
+  - frusciante
+  - Greenle
   - grnd
+  - herzog
   - inout
   - isnot
   - isort
@@ -34,6 +38,7 @@ words:
   - pydantic
   - pyrogram
   - pytest
+  - selectin
   - selectinload
   - signup
   - simusik

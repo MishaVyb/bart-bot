@@ -1,5 +1,6 @@
 import asyncio
 import builtins
+import logging
 import re
 import time
 from contextlib import asynccontextmanager, contextmanager
@@ -7,9 +8,11 @@ from dataclasses import dataclass
 from random import randint
 from typing import ClassVar
 
+import backoff
 import pytest
 from anyio import sleep
 from pyrogram import Client, filters  # type: ignore [attr-defined]
+from pyrogram.errors.exceptions import flood_420
 from pyrogram.raw.functions.messages import DeleteHistory  # type: ignore [attr-defined]
 from pyrogram.types import Message
 from sqlalchemy import select
@@ -18,9 +21,13 @@ from sqlalchemy.orm import selectinload
 from telegram import Update
 from telegram.ext import Application, ApplicationHandlerStop, ContextTypes
 
-from database.models import UserModel
+from database.models import StorageModel, UserModel
 from tests.conftest import TestConfig, logger
 from utils import randstr
+
+
+class IntegrationTestFailed(Exception):
+    pass
 
 
 @dataclass(frozen=True)
@@ -102,9 +109,12 @@ class ClientIntegration:
         self._collection: asyncio.Event = asyncio.Event()
 
     def __str__(self) -> str:
-        return f'<{self.target} integration ({self.credits})'
+        return f'<{self.tag} integration>'
 
-    # TODO: add backoff factor for auth fails
+    @property
+    def replyes(self):
+        return self._collected_replyes
+
     @asynccontextmanager
     async def session_context(self, tag: str = ''):
         """
@@ -121,52 +131,66 @@ class ClientIntegration:
             phone_number=self.credits.phone,
             phone_code=self.credits.get_confirmation_code(),
         )
-
-        # set main *any* message handler-callback to collect received messages while acting tests:
-        self.client.on_message(filters.chat(self.target))(self._collect_replyes_callback)  # type: ignore
-
-        # set error handler-callback to store any exception received to tell pytest that integration test was failed
-        #
-        # NOTE
-        # if native application error handler raise ApplicationHandlerStop after error handling, this error handler
-        # will be omitted and 'self._collected_exceptions' list leaves empty
-        # TODO transfer to app.post_init
-        self.app.add_error_handler(self._collect_app_exceptions_callback)  # type: ignore
-
         try:
             logger.info(f'Make authorization for {self}. ')
+
             # NOTE: some phonenumbers are registered already, some other not.
             # to be sure, handle sign up action by patching std input
             with self._patch_signup_inout():
                 await self.client.start()
-
             if self.config.strict_mode:
-                logger.info('Strict mode is on. Set user credentials and username. It takes a while. ')
-
-                # update remote Telegram User properties:
-                await self.client.update_profile(*self.credits.profile)
-                if self.client.me.username != self.credits.username:
-                    await self.client.set_username(self.credits.username)
-
-                await self.client.invoke(
-                    DeleteHistory(peer=await self.client.resolve_peer(self.target), max_id=0, just_clear=False)
-                )
-                # await self.client.send_message(self.config.botname, '/start') # UNUSED
-                # TODO kill all other potential account sessions for current phonenumber
-                # TODO set 2 factor auth (that potentials other account sessions won't use it while testing)
+                await self._init_strict_mode()
+            self._apply_handlers()
 
             yield self
         finally:
             try:
                 if self.config.strict_mode:
                     await self.client.set_username(None)
-
                 await self.client.stop()
             except ConnectionError as e:
                 logger.warning(f'Stopping client fails: {e}')
 
+    @backoff.on_exception(
+        backoff.expo,
+        flood_420.Flood,  # TODO: wait for Flood.value seconds
+        max_tries=10,
+        logger=logger,
+        backoff_log_level=logging.WARNING,
+    )
+    async def _init_strict_mode(self):
+        logger.info('Strict mode is on. Set user credentials and username. It takes a while. ')
+
+        # [1] update remote Telegram User properties:
+        await self.client.update_profile(*self.credits.profile)
+        if self.client.me.username != self.credits.username:
+            await self.client.set_username(self.credits.username)
+
+        # [2] start conversation and delete history
+        # await self.client.send_message(self.target, '/start') # FIXME: database and tables are not present yet
+        await self.client.invoke(
+            DeleteHistory(peer=await self.client.resolve_peer(self.target), max_id=0, just_clear=False)
+        )
+
+        # [3] TODO kill all other potential account sessions for current phonenumber
+        # [4] TODO set 2 factor auth (that potentials other account sessions won't use it while testing)
+
+        logger.info(f'Done! {self} fully initialized. ')
+
+    def _apply_handlers(self):
+        """
+        Set handlers for:
+        - message handler-callback to collect any messages while acting tests.
+        - error handler-callback to store any unhandled exception to tell pytest that integration test was failed.
+        """
+        self.client.on_message(filters.chat(self.target))(self._collect_replyes_callback)  # type: ignore
+        # NOTE
+        # if native application error handler raise ApplicationHandlerStop after error handling, this error handler
+        # will be omitted and 'self._collected_exceptions' list leaves empty
+        self.app.add_error_handler(self._collect_app_exceptions_callback)  # type: ignore
+
     @asynccontextmanager
-    async def collect(self, *, amount: int = None, strict_mode: bool = False, rises: bool = True):
+    async def collect(self, *, amount: int = None, strict_mode: bool = None, rises: bool = True):
         """
         Provide context for single test case. Collecting all messages from Bot and make basic assertions.
 
@@ -175,7 +199,7 @@ class ClientIntegration:
         there are no more messages after expected ones.
         * `rises`: check there are no unhandled exception inside app was risen.
         """
-        strict_mode = strict_mode or self.config.strict_mode
+        strict_mode = self.config.strict_mode if strict_mode is None else strict_mode
         self._collection_required_amount = amount
         self._collection.clear()
         self._collected_replyes.clear()
@@ -183,7 +207,9 @@ class ClientIntegration:
 
         try:
             yield self._collected_replyes
-        finally:
+        except:
+            raise
+        else:
             logger.info(f'Waiting for replyes. ({strict_mode=}, {amount=}, timeout={self._collection_max_timeout}). ')
             collection_time_start = time.time()
 
@@ -206,8 +232,11 @@ class ClientIntegration:
                 logger.error(f'Unhandled app exception received: {self._collected_exception}. ')
                 if rises:
                     raise self._collected_exception
-            if amount:
-                assert len(self._collected_replyes) == amount, 'Received unexpected messages amount. '
+            if amount is not None and amount != len(self._collected_replyes):
+                raise IntegrationTestFailed(
+                    f'Received unexpected messages amount. {amount} != {len(self._collected_replyes)}. '
+                    f'Where {len(self._collected_replyes)}: {self._collected_replyes}'
+                )
 
     @contextmanager
     def _patch_signup_inout(self):
@@ -240,19 +269,20 @@ class ClientIntegration:
         if not self.db_session:
             raise RuntimeError(f'None {AsyncSession}. Assignee it to {self.db_session=} before. ')
 
-        tg_user = await self.client.get_me() if self.config.strict_mode else self.client.me
-        assert tg_user
-
+        assert self.client.me
         user_query = (
             select(UserModel)
-            .filter(UserModel.id == tg_user.id)
+            .filter(UserModel.id == self.client.me.id)
             .options(
                 selectinload(UserModel.history),
-                selectinload(UserModel.storage),
+                selectinload(UserModel.storage).selectinload(StorageModel.requests),
+                selectinload(UserModel.storage).selectinload(StorageModel.participants),
+                selectinload(UserModel.storage_request).selectinload(StorageModel.requests),
+                selectinload(UserModel.storage_request).selectinload(StorageModel.participants),
             )
         )
         db_user = (await self.db_session.execute(user_query)).scalar_one()
-        db_user.tg = tg_user
+        db_user.tg = self.client.me
         return db_user
 
     async def _collection_max_timeout_waiting(self):
@@ -261,16 +291,24 @@ class ClientIntegration:
 
     async def _collect_replyes_callback(self, client: Client, message: Message):
         self._collected_replyes.append(message)
-        logger.info(f'Add message to test collection: {len(self._collected_replyes)}. ')
+        logger.info(f'Add message to {self} collection: {len(self._collected_replyes)}. ')
 
         if len(self._collected_replyes) == self._collection_required_amount:
             self._collection.set()
 
     async def _collect_app_exceptions_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if self._collected_exception:
-            logger.error(context.error)
+        if update.effective_user.id != self.client.me.id:
             return
 
+        if self._collected_exception:
+            logger.error(
+                f'{self} already collected exception. '
+                f'\n\tOriginal: {self._collected_exception}. '
+                f'\n\tUpdate: {context.error}. '
+            )
+            return
+
+        logger.info(f'Add exception to {self} collection: {context.error}')
         self._collected_exception = context.error
         self._collection.set()
-        raise ApplicationHandlerStop  # UNUSED
+        raise ApplicationHandlerStop

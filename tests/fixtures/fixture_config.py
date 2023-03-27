@@ -13,7 +13,7 @@ def config(request: FixtureRequest):
 
 
 @pytest.fixture(scope='session', autouse=True)
-def mock_config(config: AppConfig):
+def patch_config(config: AppConfig):
     """
     Patching collector config file and restore test files ('cities.json')
     """

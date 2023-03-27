@@ -3,23 +3,50 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from telegram import User
 from telegram._message import Message
 
 from accessories import MediaType
 from configurations import logger
 from database import MessageModel
-from database.models import UserModel
+from database.models import StorageModel, UserModel
 from exceptions import NoPhotosException, NoUserException
 
 
 @dataclass
 class AppService:
+    """
+    Database access implementation.
+    """
+
     session: AsyncSession
     user: UserModel
     """Effective user from DB (accessing telegram object via `user.tg`). """
     message: Message
     """Message from telegram update. """
+
+    async def get_user(self, user: User | int | None):
+        """
+        Get user from DB by `id` or Telegram `user.id`. User must have conversation with Bot.
+        """
+        if not user:
+            raise ValueError(user)
+
+        user_id = user.id if isinstance(user, User) else user
+        options = (
+            selectinload(UserModel.storage).selectinload(StorageModel.requests),
+            selectinload(UserModel.storage).selectinload(StorageModel.participants),
+        )
+        query = select(UserModel).filter_by(id=user_id).options(*options)
+
+        try:
+            result = (await self.session.execute(query)).unique().scalar_one()
+            if isinstance(user, User):
+                result.tg = user
+            return result
+        except NoResultFound:
+            raise NoUserException()
 
     def append_history(self, message: Message):
         media_id = None
@@ -44,23 +71,6 @@ class AppService:
         self.session.add(instance)
         return instance
 
-    async def get_user(self, user: User | int | None):
-        """
-        Get user from DB. User must have conversation with Bot.
-
-        user: `telegram.User` or `int` (id).
-        """
-        if not user:
-            raise ValueError(user)
-
-        user_id = user.id if isinstance(user, User) else user
-        query = select(UserModel).filter_by(id=user_id)
-
-        try:
-            return (await self.session.execute(query)).scalar_one()
-        except NoResultFound:
-            raise NoUserException()
-
     async def get_media_id(self, *, media_type: MediaType | None = None):
         query = self._get_media_query(media_type)
         try:
@@ -73,12 +83,16 @@ class AppService:
 
     async def get_media_count(self, *, media_type: MediaType | None = None):
         query = self._get_media_query(media_type)
-        return len((await self.session.execute(query)).all())  # FIXME: check exists (or count)
+        return len((await self.session.execute(query)).all())  # FIXME: SQL count
 
     def _get_media_query(self, media_type: MediaType | None = None):
         types = [media_type.value] if media_type else [MediaType.photo.value, MediaType.video.value]
         return select(MessageModel).filter(
-            MessageModel.user_id == self.user.storage,
+            MessageModel.user_id == self.user.storage_id,
             MessageModel.media_type.in_(types),
             MessageModel.media_id.isnot(None),
         )
+
+    async def get_history_count(self, *filters):
+        query = select(MessageModel).filter(MessageModel.user_id == self.user.id, *filters)
+        return len((await self.session.execute(query)).scalars().all())  # FIXME: SQL count

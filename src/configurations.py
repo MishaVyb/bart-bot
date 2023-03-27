@@ -76,6 +76,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(CONFIG.log_level)
 
 handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s]: %(message)s'))
+handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s:%(lineno)s] %(message)s'))
 if not logger.handlers:
     logger.addHandler(handler)
