@@ -63,11 +63,13 @@ class ExceptionMessages(BaseModel):
 
     user_not_start_bot: str
     already_added_to_family: str
+    conversation_fallback: str
 
 
-class familyHandlingReplyes(BaseModel):
+class FamilyHandlingReplyes(BaseModel):
     request: str
     confirm: str
+    reject: str
 
 
 class BotMessages(BaseModel):
@@ -79,7 +81,7 @@ class BotMessages(BaseModel):
     receive_food: Replyes
     send_photo: SendPhotoReplyes
     receive_photo: ReceivePhotoReplyes
-    family: familyHandlingReplyes
+    family: FamilyHandlingReplyes
     exceptions: ExceptionMessages  # TODO move to BotContent layer
 
 

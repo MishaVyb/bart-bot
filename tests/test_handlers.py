@@ -3,7 +3,7 @@ import imagehash
 import pytest
 from PIL import Image
 from pyrogram.types import InputMediaPhoto
-
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from configurations import AppConfig
 from content import CONTENT
 from tests.conftest import TestConfig
@@ -16,7 +16,7 @@ async def test_start_handler(vybornyy: ClientIntegration, config: AppConfig):
     async with vybornyy.collect(amount=1) as replyes:
         await vybornyy.client.send_message(config.botname, '/start')
 
-    assert replyes[0].text == CONTENT.messages.start.format(username=(await vybornyy.client.get_me()).username)
+    assert replyes[0].text == CONTENT.messages.start.format(username=(await vybornyy.client.get_me()).username or '')
 
 
 async def test_photo_handler(vybornyy: ClientIntegration, config: AppConfig, images: list[str]):
@@ -77,8 +77,9 @@ async def test_all_handler(vybornyy: ClientIntegration, config: AppConfig):
     assert replyes[0].text in CONTENT.messages.regular
 
 
-@pytest.mark.xfail
-async def test_family(vybornyy: ClientIntegration, herzog: ClientIntegration, config: TestConfig, images: list[str]):
+async def test_family(
+    engine: AsyncEngine, vybornyy: ClientIntegration, herzog: ClientIntegration, config: TestConfig, images: list[str]
+):
     """
     Test case:
     - Vybornyy request Herzog's storage.
@@ -94,7 +95,7 @@ async def test_family(vybornyy: ClientIntegration, herzog: ClientIntegration, co
     async with herzog.collect(amount=1, strict_mode=False):
         await herzog.client.send_message(config.botname, '/start')
 
-    # vybornyy subscribe herzog
+    # vybornyy subscribes on herzog's storage
     async with herzog.collect(amount=2, strict_mode=False):
         async with vybornyy.collect(amount=1, strict_mode=False):
             await vybornyy.client.forward_messages(config.botname, herzog.credits.username, message_for_forwarding.id)
@@ -109,7 +110,9 @@ async def test_family(vybornyy: ClientIntegration, herzog: ClientIntegration, co
     assert vybornyy.replyes[0].text == CONTENT.messages.family.confirm
 
     # check shared storage
-    assert (await herzog.user).storage.id == (await herzog.user).id
-    assert (await vybornyy.user).storage.id == (await herzog.user).id
+    async with AsyncSession(engine) as session, session.begin():
+        herzog.db_session = vybornyy.db_session = session
+        vybornyy_user, herzog_user = (await vybornyy.user), (await herzog.user)
 
-    assert (await vybornyy.user).storage_request == None
+        assert vybornyy_user.storage.id == herzog_user.storage.id == herzog_user.id
+        assert vybornyy_user.storage_request == None

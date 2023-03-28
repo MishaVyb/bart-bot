@@ -68,7 +68,6 @@ async def family_start(
     - BartBot ask storage-owner for permition.
     - After confirmation is received, user associate with this storage.
     """
-    logger.info(f'--------------> {get_func_name()}')
 
     if not user.tg.username:
         raise NotImplementedError
@@ -99,23 +98,14 @@ async def family_start(
 
 @handler.message(filters.Regex(re.compile(r'|'.join(CONTENT.confirm_answers), re.IGNORECASE)))
 async def family_confirm(bot: Bot, message: Message, service: AppService, user: UserModel):
-    logger.info(f'--------------> {get_func_name()}')
-
     if not user.storage.requests:
         logger.error('No family requests. ')
         return
-
     if len(user.storage.requests) > 1:
         logger.warning('Many family requests: not implemented. Taking the last. ')  # TODO
 
-    # participant = user.storage.requests.pop()
-    # participant.storage = user.storage
-    # participant.storage_request = None
-
     participant = user.storage.requests.pop()
-    # user.storage.participants += [participant]
-    participant.storage = user.storage
-    participant.storage_request = None
+    user.storage.participants.append(participant)
 
     await bot.send_message(participant.id, CONTENT.messages.family.confirm)
     await message.reply_text(CONTENT.messages.family.confirm)
@@ -125,13 +115,21 @@ async def family_confirm(bot: Bot, message: Message, service: AppService, user: 
 
 @handler.message(filters.Regex(re.compile(r'|'.join(CONTENT.reject_answers), re.IGNORECASE)))
 async def family_reject(bot: Bot, message: Message, service: AppService, user: UserModel):
-    logger.info(f'--------------> {get_func_name()}')
+    if not user.storage.requests:
+        logger.error('No family requests. ')
+        return
+    if len(user.storage.requests) > 1:
+        logger.warning('Many family requests: not implemented. Taking the last. ')  # TODO
+
+    participant = user.storage.requests.pop()
+    await bot.send_message(participant.id, CONTENT.messages.family.reject)
+
     return ConversationHandler.END
 
 
 @handler.message(filters.ALL)
-async def family_fallback(bot: Bot, message: Message, service: AppService, user: UserModel):
-    logger.info(f'--------------> {get_func_name()}')
+async def family_fallback(message: Message):
+    await message.reply_text(CONTENT.messages.exceptions.conversation_fallback)
     return ConversationHandler.END
 
 

@@ -22,6 +22,7 @@ if __version_info__ < (20, 0, 0, 'alpha', 1):
 
 # secrets and app settings
 class AppConfig(BaseSettings):
+    app_title: str
     debug: bool = True
     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'DEBUG'
     sql_logs: bool = False
