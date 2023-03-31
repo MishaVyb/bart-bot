@@ -1,8 +1,9 @@
 import logging
+from pathlib import Path
 from pprint import pformat
 from typing import Literal
 
-from pydantic import BaseSettings, SecretStr
+from pydantic import BaseSettings, DirectoryPath, FilePath, SecretStr
 from sqlalchemy.engine import URL
 from telegram import __version__ as tg_version
 
@@ -32,7 +33,9 @@ class AppConfig(BaseSettings):
     botname: str = 'BartPhotosBot'
     appname: str = 'bart-bot'
     admin_id: int | None = None
-    content_filepath: str = f'{appname}.content.yaml'
+    base_dir: DirectoryPath = Path().resolve(__file__)
+    content_filepath: FilePath = base_dir / f'{appname}.content.yaml'
+    dump_filepath: FilePath = base_dir / 'data' / '1678041517_dump.json'
 
     db: str = 'postgresql'
     db_dialect: str = 'asyncpg'

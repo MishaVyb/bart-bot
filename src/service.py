@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -56,7 +56,9 @@ class AppService:
             media_id = message.photo[-1].file_id
             media_type = MediaType.photo.value
         elif message.video:
-            raise NotImplementedError
+            logger.warn('Add video type. It is experemental future. ')
+            media_id = message.video.file_id
+            media_type = MediaType.video.value
 
         instance = MessageModel(
             user_id=self.user.id,
@@ -72,7 +74,8 @@ class AppService:
         return instance
 
     async def get_media_id(self, *, media_type: MediaType | None = None):
-        query = self._get_media_query(media_type)
+        query = self._get_media_query(media_type).order_by(func.random()).limit(1)
+
         try:
             message = (await self.session.execute(query)).scalar_one()
         except NoResultFound:
@@ -88,7 +91,7 @@ class AppService:
     def _get_media_query(self, media_type: MediaType | None = None):
         types = [media_type.value] if media_type else [MediaType.photo.value, MediaType.video.value]
         return select(MessageModel).filter(
-            MessageModel.user_id == self.user.storage_id,
+            MessageModel.user_id.in_(participant.id for participant in self.user.storage.participants),
             MessageModel.media_type.in_(types),
             MessageModel.media_id.isnot(None),
         )

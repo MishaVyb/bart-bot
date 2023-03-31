@@ -8,6 +8,7 @@ anyio
 sqlalchemy-utils
 psycopg2-binary     # for sqlalchemy_utils
 imagehash           # for assert image equality
+backoff
 
 # linters:
 mypy

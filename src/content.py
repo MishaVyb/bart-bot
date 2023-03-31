@@ -65,6 +65,8 @@ class ExceptionMessages(BaseModel):
     already_added_to_family: str
     conversation_fallback: str
 
+    name_not_set: str = ''
+
 
 class FamilyHandlingReplyes(BaseModel):
     request: str

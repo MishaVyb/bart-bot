@@ -1,22 +1,22 @@
 version: '3.2'
 services:
-  # db:
-  #   image: postgres:13.0-alpine
-  #   restart: always
-  #   volumes:
-  #     - postgres:/var/lib/postgresql/data/
-  #   env_file:
-  #     - build.env
+  db:
+    image: postgres:13.0-alpine
+    restart: always
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+    env_file:
+      - build.env
 
   polling:
     image: vybornyy/bart-bot
     restart: always
     env_file:
       - build.env
-    # depends_on:
-    #   - db
+    depends_on:
+      - db
     volumes:
       - ./data/:/bart-bot/data # handle bart-bot.dump.json file
 
-# volumes:
-#   postgres:
+volumes:
+  postgres:

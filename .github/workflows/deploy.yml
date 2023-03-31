@@ -2,7 +2,7 @@ name: deploy
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   PROJECT_NAME: bart-bot
@@ -48,6 +48,6 @@ jobs:
           cd ${{ env.PROJECT_NAME }}/
 
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
-          sudo docker-compose stop polling
-          sudo docker-compose rm polling
-          sudo docker-compose up -d
+          sudo docker-compose up -d --force-recreate polling
+
+          sudo docker-compose exec db alembic upgrade head

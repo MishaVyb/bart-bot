@@ -1,3 +1,4 @@
+import json
 import re
 from asyncio import sleep
 
@@ -5,24 +6,38 @@ from telegram import Bot, Message, ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler, filters
 
 from application.base import APPHandlers, LayeredApplication
-from configurations import logger
+from configurations import CONFIG, logger
 from content import CONTENT
 from database.models import MessageModel, UserModel
 from exceptions import NoPhotosException, NoUserException
 from service import AppService
-from utils import get_func_name
 
 handler = APPHandlers()
 
 
 @handler.command()
 async def start(user: UserModel, message: Message):
-    logger.info(f'Call: {get_func_name()}')
-
     await message.reply_text(
         text=CONTENT.messages.start.format(username=user.tg.username or ''),
         reply_markup=ReplyKeyboardMarkup(CONTENT.keyboard, resize_keyboard=True),
     )
+
+
+@handler.command()
+async def admin_loaddata(user: UserModel, message: Message, service: AppService, bot: Bot):
+    with open(CONFIG.dump_filepath, 'r') as file:
+        messages = Message.de_list(json.load(file), bot)
+
+    logger.info(f'upload {len(messages)} messages. ')
+    for message in messages:
+        service.append_history(message)
+
+    logger.info(f'add to database. total: {(await service.get_media_count())}')
+
+
+@handler.command()
+async def count(user: UserModel, message: Message, service: AppService):
+    await message.reply_text(text=(await service.get_media_count()))
 
 
 @handler.message()
@@ -70,7 +85,8 @@ async def family_start(
     """
 
     if not user.tg.username:
-        raise NotImplementedError
+        await message.reply_text(CONTENT.messages.exceptions.name_not_set)
+        return ConversationHandler.END
 
     try:
         from_user = await service.get_user(message.forward_from)
@@ -90,7 +106,7 @@ async def family_start(
     family: ConversationHandler = handler['family']
     family_key = (from_user.storage.id,)
     if family_key in family._conversations:
-        raise NotImplementedError
+        logger.warn('NotImplemented: family_key in family._conversations')
 
     family._update_state('making_response_for_family_request', family_key)
     return ConversationHandler.END

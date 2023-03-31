@@ -50,13 +50,20 @@ push:
 	@read -p "Commit message: " COMMIT_MESSAGE; git add . ; git commit -m "$$COMMIT_MESSAGE"
 	@git push
 
+# for local testing in containers
+build_run:
+	docker build -t vybornyy/bart-bot .
+	docker-compose up -d --force-recreate polling
+	docker-compose logs -f polling
+
+
 
 update_server: user := vybornyy
 update_server: host := 158.160.11.4
 update_server: workdir := bart-bot
 update_server:
 	@echo "## Copy files to project dir at production server ##"
-	scp data/bart-bot.dump.json $(user)@$(host):/home/$(user)/$(workdir)/data/
+	scp data/1678041517_dump.json $(user)@$(host):/home/$(user)/$(workdir)/data/
 	scp docker-compose.yml $(user)@$(host):/home/$(user)/$(workdir)/
 	scp build.env $(user)@$(host):/home/$(user)/$(workdir)/
 

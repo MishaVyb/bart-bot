@@ -4,4 +4,4 @@ pydantic==1.10.5
 python-dotenv==0.21.1
 python-telegram-bot==20.1
 SQLAlchemy==2.0.4
-backoff==2.2.1
+PyYAML==6.0
