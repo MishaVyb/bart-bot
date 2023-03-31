@@ -49,4 +49,4 @@ jobs:
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
           sudo docker-compose up -d --force-recreate polling
 
-          sudo docker-compose exec db alembic upgrade head
+          sudo docker-compose exec polling alembic upgrade head

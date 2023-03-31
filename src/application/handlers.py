@@ -25,6 +25,9 @@ async def start(user: UserModel, message: Message):
 
 @handler.command()
 async def admin_loaddata(user: UserModel, message: Message, service: AppService, bot: Bot):
+    if user.id != CONFIG.admin_id or not CONFIG.dump_filepath:
+        return
+
     with open(CONFIG.dump_filepath, 'r') as file:
         messages = Message.de_list(json.load(file), bot)
 

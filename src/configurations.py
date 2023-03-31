@@ -5,37 +5,21 @@ from typing import Literal
 
 from pydantic import BaseSettings, DirectoryPath, FilePath, SecretStr
 from sqlalchemy.engine import URL
-from telegram import __version__ as tg_version
-
-# checking python version before starting app
-try:
-    from telegram import __version_info__
-except ImportError:
-    __version_info__ = (0, 0, 0, 0, 0)  # type: ignore[assignment]
-
-if __version_info__ < (20, 0, 0, 'alpha', 1):
-    raise RuntimeError(
-        f'This example is not compatible with your current PTB version {tg_version}. To view the '
-        f'{tg_version} version of this example, '
-        f'visit https://docs.python-telegram-bot.org/en/v{tg_version}/examples.html'
-    )
 
 
-# secrets and app settings
 class AppConfig(BaseSettings):
-    app_title: str
+    app_title: str = ''
     debug: bool = True
     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR'] = 'DEBUG'
     sql_logs: bool = False
 
     bot_token: SecretStr
-
     botname: str = 'BartPhotosBot'
-    appname: str = 'bart-bot'
     admin_id: int | None = None
+
     base_dir: DirectoryPath = Path().resolve(__file__)
-    content_filepath: FilePath = base_dir / f'{appname}.content.yaml'
-    dump_filepath: FilePath = base_dir / 'data' / '1678041517_dump.json'
+    content_filepath: FilePath = base_dir / f'bart-bot.content.yaml'
+    dump_filepath: FilePath | None
 
     db: str = 'postgresql'
     db_dialect: str = 'asyncpg'
@@ -66,16 +50,7 @@ class AppConfig(BaseSettings):
 
 CONFIG = AppConfig()
 
-
-# logging
-# TODO:
-
-# option [1]
-# logging.basicConfig(format='%(levelname)s [%(filename)s]: %(message)s', level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
-
-# # option [2]
-# aa = __name__
+# Logging.
 logger = logging.getLogger(__name__)
 logger.setLevel(CONFIG.log_level)
 
