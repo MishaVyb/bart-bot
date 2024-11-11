@@ -1,8 +1,10 @@
 import logging
+from datetime import timezone
 from pathlib import Path
 from pprint import pformat
 from typing import Literal
 
+from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseSettings, DirectoryPath, FilePath, SecretStr
 from sqlalchemy.engine import URL
 
@@ -20,6 +22,31 @@ class AppConfig(BaseSettings):
     base_dir: DirectoryPath = Path().resolve(__file__)
     content_filepath: FilePath = base_dir / f'bart-bot.content.yaml'
     dump_filepath: FilePath | None
+
+    send_feed_me_chat_ids: list[int] = []
+    send_feed_me_message_crons: list[CronTrigger] = [
+        CronTrigger(
+            hour=4,
+            minute=0,
+            timezone=timezone.utc,
+        ),
+        CronTrigger(
+            hour=9,
+            minute=0,
+            timezone=timezone.utc,
+        ),
+        CronTrigger(
+            hour=16,
+            minute=0,
+            timezone=timezone.utc,
+        ),
+        # VBRN for local testing:
+        # CronTrigger(
+        #     hour=datetime.now(timezone.utc).hour,
+        #     minute=(datetime.now(timezone.utc) + timedelta(minutes=1)).minute,
+        #     timezone=timezone.utc,
+        # ),
+    ]
 
     db: str = 'postgresql'
     db_dialect: str = 'asyncpg'
@@ -55,6 +82,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(CONFIG.log_level)
 
 handler = logger.handlers and logger.handlers[0] or logging.StreamHandler()
-handler.setFormatter(logging.Formatter('%(levelname)s [%(filename)s:%(lineno)s] %(message)s'))
+handler.setFormatter(logging.Formatter('%(levelname)s [%(name)s] %(message)s'))
 if not logger.handlers:
     logger.addHandler(handler)
+
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+logging.getLogger('apscheduler').addHandler(handler)

@@ -5,3 +5,4 @@ python-dotenv==0.21.1
 python-telegram-bot==20.1
 SQLAlchemy==2.0.4
 PyYAML==6.0
+apscheduler==3.10.4

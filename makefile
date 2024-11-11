@@ -56,10 +56,8 @@ build_run:
 	docker-compose up -d --force-recreate polling
 	docker-compose logs -f polling
 
-
-
 update_server: user := vybornyy
-update_server: host := 158.160.11.4
+update_server: host := 158.160.73.243
 update_server: workdir := bart-bot
 update_server:
 	@echo "## Copy files to project dir at production server ##"

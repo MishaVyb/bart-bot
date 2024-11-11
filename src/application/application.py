@@ -1,5 +1,6 @@
 from types import NoneType
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import ContextTypes
 
 from application.base import LayeredApplication
@@ -12,6 +13,7 @@ from application.middlewares import (
     session_middleware,
     user_middleware,
 )
+from application.tasks import send_feed_me_message_task
 from configurations import CONFIG, logger
 
 
@@ -28,6 +30,13 @@ async def app_init(app: LayeredApplication):
     )
     app.add_handlers(list(handler.values()))  # FIXME
     # app.add_error_handler(error_handler) # UNUSED
+
+    # register bg task
+    scheduler = AsyncIOScheduler()
+    for cron in CONFIG.send_feed_me_message_crons:
+        scheduler.add_job(send_feed_me_message_task, cron)
+
+    scheduler.start()
 
 
 NoneContextType = ContextTypes(  # in-memory data is deprecated for this application
