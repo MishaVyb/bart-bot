@@ -66,7 +66,7 @@ update_server:
 	scp build.env $(user)@$(host):/home/$(user)/$(workdir)/
 
 
-webhook: token := 5382265508:AAGQmTrWJPyu5sS5NRkSyVBzHi9Fv8sj6z8
+webhook: token := ...
 webhook: url := https://functions.yandexcloud.net/d4e5c65sh996i1k7ap7g
 webhook:
 	curl \
